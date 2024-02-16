@@ -36,6 +36,22 @@ definitions:
     - stok
     - user_id
     type: object
+  github_com_arfan21_vocagame_internal_model.ProductUpdateRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: string
+      stok:
+        type: integer
+    required:
+    - description
+    - name
+    - price
+    - stok
+    type: object
   github_com_arfan21_vocagame_internal_model.UserLoginRequest:
     properties:
       email:
@@ -113,9 +129,12 @@ definitions:
         example: OK
         type: string
     type: object
-  github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse:
+  github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse-array_github_com_arfan21_vocagame_internal_model_GetProductResponse:
     properties:
-      data: {}
+      data:
+        items:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse'
+        type: array
       limit:
         example: 10
         type: integer
@@ -181,10 +200,12 @@ paths:
             - properties:
                 data:
                   allOf:
-                  - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse'
+                  - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse-array_github_com_arfan21_vocagame_internal_model_GetProductResponse'
                   - properties:
                       data:
-                        $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse'
+                        items:
+                          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse'
+                        type: array
                     type: object
               type: object
         "500":
@@ -233,6 +254,52 @@ paths:
           schema:
             $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
       summary: Create Product
+      tags:
+      - Product
+  /api/v1/products/:productid:
+    put:
+      consumes:
+      - application/json
+      description: Update Product
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Payload Update Product Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.ProductUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "400":
+          description: Error validation field
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                errors:
+                  items:
+                    $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.ErrValidationResponse'
+                  type: array
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Update Product
       tags:
       - Product
   /api/v1/users/login:

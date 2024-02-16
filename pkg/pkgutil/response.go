@@ -29,12 +29,12 @@ func (h HTTPResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(alias)
 }
 
-type PaginationResponse struct {
+type PaginationResponse[T any] struct {
 	TotalData int `json:"total_data" example:"1"`
 	TotalPage int `json:"total_page" example:"1"`
 	Page      int `json:"page" example:"1"`
 	Limit     int `json:"limit" example:"10"`
-	Data      any `json:"data,omitempty" `
+	Data      T   `json:"data,omitempty" `
 }
 
 type ErrValidationResponse struct {

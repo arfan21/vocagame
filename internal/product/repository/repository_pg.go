@@ -174,3 +174,31 @@ func (r Repository) GetTotalProduct(ctx context.Context, filter entity.ListProdu
 
 	return
 }
+
+func (r Repository) Update(ctx context.Context, data entity.Product) (err error) {
+	query := `
+		UPDATE products
+		SET
+			name = $1,
+			description = $2,
+			stok = $3,
+			price = $4
+		WHERE
+			id = $5
+	`
+
+	_, err = r.db.Exec(ctx, query,
+		data.Name,
+		data.Description,
+		data.Stok,
+		data.Price,
+		data.ID,
+	)
+
+	if err != nil {
+		err = fmt.Errorf("product.repository.Update: failed to update product: %w", err)
+		return
+	}
+
+	return
+}

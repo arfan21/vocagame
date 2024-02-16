@@ -18,6 +18,7 @@ var (
 	ErrTransactionAlreadyPaid         = errors.New("transaction already paid")
 	ErrTransactionAlreadyPaidOrFailed = errors.New("transaction already paid or failed")
 	ErrTxDetailInsertedNotEqual       = errors.New("transaction detail inserted not equal with transaction detail request")
+	ErrCannotUpdateNotOwner           = &ErrForbidden{Message: "cannot update product, not owner"}
 )
 
 type ErrNotFound struct {
@@ -41,5 +42,13 @@ type ErrValidation struct {
 }
 
 func (e *ErrValidation) Error() string {
+	return e.Message
+}
+
+type ErrForbidden struct {
+	Message string
+}
+
+func (e *ErrForbidden) Error() string {
 	return e.Message
 }

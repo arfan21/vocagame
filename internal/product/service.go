@@ -12,5 +12,6 @@ type Service interface {
 	WithTx(tx pgx.Tx) Service
 
 	Create(ctx context.Context, req model.ProductCreateRequest) (err error)
-	GetProducts(ctx context.Context, req model.GetListProductRequest) (res pkgutil.PaginationResponse, err error)
+	GetProducts(ctx context.Context, req model.GetListProductRequest) (res pkgutil.PaginationResponse[[]model.GetProductResponse], err error)
+	Update(ctx context.Context, req model.ProductUpdateRequest) (err error)
 }

@@ -7,8 +7,10 @@ import (
 	"github.com/arfan21/vocagame/internal/entity"
 	"github.com/arfan21/vocagame/internal/model"
 	"github.com/arfan21/vocagame/internal/product"
+	"github.com/arfan21/vocagame/pkg/constant"
 	"github.com/arfan21/vocagame/pkg/pkgutil"
 	"github.com/arfan21/vocagame/pkg/validation"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -49,7 +51,7 @@ func (s Service) Create(ctx context.Context, req model.ProductCreateRequest) (er
 	return nil
 }
 
-func (s Service) getProducts(ctx context.Context, filter entity.ListProductFilter) (res pkgutil.PaginationResponse, err error) {
+func (s Service) getProducts(ctx context.Context, filter entity.ListProductFilter) (res pkgutil.PaginationResponse[[]model.GetProductResponse], err error) {
 	results, err := s.repo.GetProducts(ctx, filter)
 	if err != nil {
 		err = fmt.Errorf("product.service.GetProducts: failed to get products from db : %w", err)
@@ -83,7 +85,7 @@ func (s Service) getProducts(ctx context.Context, filter entity.ListProductFilte
 		totalPage = total / filter.Limit
 	}
 
-	res = pkgutil.PaginationResponse{
+	res = pkgutil.PaginationResponse[[]model.GetProductResponse]{
 		TotalData: total,
 		TotalPage: totalPage,
 		Page:      filter.Page,
@@ -94,7 +96,7 @@ func (s Service) getProducts(ctx context.Context, filter entity.ListProductFilte
 	return
 }
 
-func (s Service) GetProducts(ctx context.Context, req model.GetListProductRequest) (res pkgutil.PaginationResponse, err error) {
+func (s Service) GetProducts(ctx context.Context, req model.GetListProductRequest) (res pkgutil.PaginationResponse[[]model.GetProductResponse], err error) {
 	err = validation.Validate(req)
 	if err != nil {
 		err = fmt.Errorf("product.service.GetProducts: failed to validate request : %w", err)
@@ -110,4 +112,50 @@ func (s Service) GetProducts(ctx context.Context, req model.GetListProductReques
 	}
 
 	return s.getProducts(ctx, filter)
+}
+
+func (s Service) Update(ctx context.Context, req model.ProductUpdateRequest) (err error) {
+	err = validation.Validate(req)
+	if err != nil {
+		err = fmt.Errorf("product.service.Update: failed to validate request : %w", err)
+		return
+	}
+
+	// check if product exist
+	resultProduct, err := s.getProducts(ctx, entity.ListProductFilter{
+		ID:    uuid.NullUUID{UUID: req.ID, Valid: true},
+		Limit: 1,
+		Page:  1,
+	})
+	if err != nil {
+		err = fmt.Errorf("product.service.Update: failed to get product : %w", err)
+		return
+	}
+
+	if len(resultProduct.Data) == 0 {
+		err = constant.ErrProductNotFound
+		return
+	}
+
+	// check if user is owner of product
+	if resultProduct.Data[0].OwnerID != req.UserID {
+		err = constant.ErrCannotUpdateNotOwner
+		return
+	}
+
+	data := entity.Product{
+		ID:          req.ID,
+		Name:        req.Name,
+		Description: req.Description,
+		Stok:        req.Stok,
+		Price:       req.Price,
+	}
+
+	err = s.repo.Update(ctx, data)
+	if err != nil {
+		err = fmt.Errorf("product.service.Update: failed to update product : %w", err)
+		return
+	}
+
+	return
 }

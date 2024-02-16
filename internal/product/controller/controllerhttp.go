@@ -64,7 +64,7 @@ func (ctrl ControllerHTTP) Create(c *fiber.Ctx) error {
 // @Param name query string false "Name of product"
 // @Param owner_id query string false "Owner ID"
 // @Param product_id query string false "Product ID"
-// @Success 200 {object} pkgutil.HTTPResponse{data=pkgutil.PaginationResponse{data=model.GetProductResponse}}
+// @Success 200 {object} pkgutil.HTTPResponse{data=pkgutil.PaginationResponse[[]model.GetProductResponse]{data=[]model.GetProductResponse}}
 // @Failure 500 {object} pkgutil.HTTPResponse
 // @Router /api/v1/products [get]
 func (ctrl ControllerHTTP) GetProducts(c *fiber.Ctx) error {
@@ -78,5 +78,54 @@ func (ctrl ControllerHTTP) GetProducts(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
 		Code: fiber.StatusOK,
 		Data: res,
+	})
+}
+
+// @Summary Update Product
+// @Description Update Product
+// @Tags Product
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "With the bearer started"
+// @Param body body model.ProductUpdateRequest true "Payload Update Product Request"
+// @Success 200 {object} pkgutil.HTTPResponse
+// @Failure 400 {object} pkgutil.HTTPResponse{errors=[]pkgutil.ErrValidationResponse} "Error validation field"
+// @Failure 404 {object} pkgutil.HTTPResponse
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/products/:productid [put]
+func (ctrl ControllerHTTP) Update(c *fiber.Ctx) error {
+	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusUnauthorized,
+			Message: "invalid or expired token",
+		})
+	}
+
+	id := c.Params("productid")
+	if len(id) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusBadRequest,
+			Message: "id is required",
+		})
+	}
+
+	var req model.ProductUpdateRequest
+	err := c.BodyParser(&req)
+	exception.PanicIfNeeded(err)
+
+	uuidUserID, err := uuid.Parse(claims.Subject)
+	exception.PanicIfNeeded(err)
+	req.UserID = uuidUserID
+
+	uuidID, err := uuid.Parse(id)
+	exception.PanicIfNeeded(err)
+	req.ID = uuidID
+
+	err = ctrl.svc.Update(c.UserContext(), req)
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusOK,
 	})
 }

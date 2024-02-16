@@ -30,3 +30,12 @@ type GetProductResponse struct {
 	OwnerID     uuid.UUID       `json:"owner_id" swaggertype:"string"`
 	OwnerName   string          `json:"owner_name"`
 }
+
+type ProductUpdateRequest struct {
+	ID          uuid.UUID       `json:"-" validate:"required"`
+	UserID      uuid.UUID       `json:"-" validate:"required"`
+	Name        string          `json:"name" validate:"required"`
+	Stok        int             `json:"stok" validate:"required"`
+	Description string          `json:"description" validate:"required"`
+	Price       decimal.Decimal `json:"price" validate:"required" swaggertype:"string"`
+}

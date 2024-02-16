@@ -54,6 +54,12 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		defaultRes.Message = "Unauthorized"
 	}
 
+	var forbiddenError *constant.ErrForbidden
+	if errors.As(err, &forbiddenError) {
+		defaultRes.Code = fiber.StatusForbidden
+		defaultRes.Message = forbiddenError.Message
+	}
+
 	var fiberError *fiber.Error
 	if errors.As(err, &fiberError) {
 		defaultRes.Code = fiberError.Code

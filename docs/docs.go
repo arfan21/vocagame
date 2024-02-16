@@ -84,13 +84,16 @@ const docTemplate = `{
                                         "data": {
                                             "allOf": [
                                                 {
-                                                    "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse"
+                                                    "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse-array_github_com_arfan21_vocagame_internal_model_GetProductResponse"
                                                 },
                                                 {
                                                     "type": "object",
                                                     "properties": {
                                                         "data": {
-                                                            "$ref": "#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse"
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse"
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -165,6 +168,80 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/products/:productid": {
+            "put": {
+                "description": "Update Product",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Update Product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload Update Product Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_arfan21_vocagame_internal_model.ProductUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Error validation field",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.ErrValidationResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse"
                         }
                     },
                     "500": {
@@ -506,6 +583,29 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_arfan21_vocagame_internal_model.ProductUpdateRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "price",
+                "stok"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
+                },
+                "stok": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_arfan21_vocagame_internal_model.UserLoginRequest": {
             "type": "object",
             "required": [
@@ -619,10 +719,15 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse": {
+        "github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse-array_github_com_arfan21_vocagame_internal_model_GetProductResponse": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse"
+                    }
+                },
                 "limit": {
                     "type": "integer",
                     "example": 10
