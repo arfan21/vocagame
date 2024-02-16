@@ -14,10 +14,11 @@ type ProductCreateRequest struct {
 }
 
 type GetListProductRequest struct {
-	Name    string        `query:"name" json:"name"`
-	Page    int           `query:"page" json:"page" validate:"min=1"`
-	Limit   int           `query:"limit" json:"limit" validate:"min=1"`
-	OwnerID uuid.NullUUID `query:"owner_id" json:"owner_id"`
+	Name      string        `query:"name" json:"name"`
+	Page      int           `query:"page" json:"page" validate:"min=1"`
+	Limit     int           `query:"limit" json:"limit" validate:"min=1"`
+	OwnerID   uuid.NullUUID `query:"owner_id" json:"owner_id"`
+	ProductID uuid.NullUUID `query:"product_id" json:"product_id"`
 }
 
 type GetProductResponse struct {

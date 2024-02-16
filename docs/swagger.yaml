@@ -164,6 +164,10 @@ paths:
         in: query
         name: owner_id
         type: string
+      - description: Product ID
+        in: query
+        name: product_id
+        type: string
       produces:
       - application/json
       responses:

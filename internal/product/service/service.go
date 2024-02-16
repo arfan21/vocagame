@@ -105,6 +105,7 @@ func (s Service) GetProducts(ctx context.Context, req model.GetListProductReques
 		Page:   req.Page,
 		Limit:  req.Limit,
 		UserID: req.OwnerID,
+		ID:     req.ProductID,
 	}
 
 	return s.getProducts(ctx, filter)

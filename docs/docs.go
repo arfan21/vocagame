@@ -62,6 +62,12 @@ const docTemplate = `{
                         "description": "Owner ID",
                         "name": "owner_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "product_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {

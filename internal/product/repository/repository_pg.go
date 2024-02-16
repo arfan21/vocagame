@@ -70,6 +70,11 @@ func (r Repository) queryRowsProductWithFilter(ctx context.Context, query string
 		whereQuery += "p.user_id = $" + strconv.Itoa(len(filterArgs)) + " AND "
 	}
 
+	if filter.ID.Valid {
+		filterArgs = append(filterArgs, filter.ID.UUID)
+		whereQuery += "p.id = $" + strconv.Itoa(len(filterArgs)) + " AND "
+	}
+
 	// if filterArgsLen  > 0, add WHERE statement and remove last AND
 	if filterArgsLen := len(filterArgs); filterArgsLen > 0 {
 		whereQuery = "WHERE " + whereQuery[:len(whereQuery)-len(" AND ")] + " "

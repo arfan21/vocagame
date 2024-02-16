@@ -24,6 +24,7 @@ func (Product) TableName() string {
 }
 
 type ListProductFilter struct {
+	ID            uuid.NullUUID `json:"id"`
 	UserID        uuid.NullUUID `jsonL:"user_id"`
 	Name          string        `query:"name" json:"name"`
 	Page          int           `query:"page" json:"page" validate:"min=1"`

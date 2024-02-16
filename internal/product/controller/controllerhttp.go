@@ -63,6 +63,7 @@ func (ctrl ControllerHTTP) Create(c *fiber.Ctx) error {
 // @Param limit query string true "Limit"
 // @Param name query string false "Name of product"
 // @Param owner_id query string false "Owner ID"
+// @Param product_id query string false "Product ID"
 // @Success 200 {object} pkgutil.HTTPResponse{data=pkgutil.PaginationResponse{data=model.GetProductResponse}}
 // @Failure 500 {object} pkgutil.HTTPResponse
 // @Router /api/v1/products [get]
