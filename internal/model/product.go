@@ -22,10 +22,11 @@ type GetListProductRequest struct {
 }
 
 type GetProductResponse struct {
-	ID        uuid.UUID       `json:"id" swaggertype:"string"`
-	Name      string          `json:"name"`
-	Stok      int             `json:"stok"`
-	Price     decimal.Decimal `json:"price" swaggertype:"string"`
-	OwnerID   uuid.UUID       `json:"owner_id" swaggertype:"string"`
-	OwnerName string          `json:"owner_name"`
+	ID          uuid.UUID       `json:"id" swaggertype:"string"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Stok        int             `json:"stok"`
+	Price       decimal.Decimal `json:"price" swaggertype:"string"`
+	OwnerID     uuid.UUID       `json:"owner_id" swaggertype:"string"`
+	OwnerName   string          `json:"owner_name"`
 }

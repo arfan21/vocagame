@@ -63,6 +63,7 @@ func (s Service) getProducts(ctx context.Context, filter entity.ListProductFilte
 	for i, result := range results {
 		resData[i].ID = result.ID
 		resData[i].Name = result.Name
+		resData[i].Description = result.Description
 		resData[i].Stok = result.Stok
 		resData[i].Price = result.Price
 		resData[i].OwnerID = result.User.ID

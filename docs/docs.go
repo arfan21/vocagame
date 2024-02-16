@@ -456,6 +456,9 @@ const docTemplate = `{
         "github_com_arfan21_vocagame_internal_model.GetProductResponse": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },

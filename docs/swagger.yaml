@@ -2,6 +2,8 @@ basePath: /api
 definitions:
   github_com_arfan21_vocagame_internal_model.GetProductResponse:
     properties:
+      description:
+        type: string
       id:
         type: string
       name:
