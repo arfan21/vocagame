@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/arfan21/vocagame/config"
+	_ "github.com/arfan21/vocagame/docs"
 	"github.com/arfan21/vocagame/internal/middleware"
 	"github.com/arfan21/vocagame/pkg/exception"
 	"github.com/arfan21/vocagame/pkg/logger"

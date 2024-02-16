@@ -1,5 +1,20 @@
 basePath: /api
 definitions:
+  github_com_arfan21_vocagame_internal_model.GetProductResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      owner_id:
+        type: string
+      owner_name:
+        type: string
+      price:
+        type: string
+      stok:
+        type: integer
+    type: object
   github_com_arfan21_vocagame_internal_model.ProductCreateRequest:
     properties:
       description:
@@ -96,6 +111,22 @@ definitions:
         example: OK
         type: string
     type: object
+  github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse:
+    properties:
+      data: {}
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_data:
+        example: 1
+        type: integer
+      total_page:
+        example: 1
+        type: integer
+    type: object
 host: localhost:8888
 info:
   contact:
@@ -110,6 +141,53 @@ info:
   version: "1.0"
 paths:
   /api/v1/products:
+    get:
+      consumes:
+      - application/json
+      description: Get Products
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        required: true
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: Name of product
+        in: query
+        name: name
+        type: string
+      - description: Owner ID
+        in: query
+        name: owner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.PaginationResponse'
+                  - properties:
+                      data:
+                        $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.GetProductResponse'
+                    type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Get Products
+      tags:
+      - Product
     post:
       consumes:
       - application/json

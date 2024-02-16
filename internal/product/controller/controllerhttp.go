@@ -53,3 +53,29 @@ func (ctrl ControllerHTTP) Create(c *fiber.Ctx) error {
 		Code: fiber.StatusCreated,
 	})
 }
+
+// @Summary Get Products
+// @Description Get Products
+// @Tags Product
+// @Accept json
+// @Produce json
+// @Param page query string true "Page"
+// @Param limit query string true "Limit"
+// @Param name query string false "Name of product"
+// @Param owner_id query string false "Owner ID"
+// @Success 200 {object} pkgutil.HTTPResponse{data=pkgutil.PaginationResponse{data=model.GetProductResponse}}
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/products [get]
+func (ctrl ControllerHTTP) GetProducts(c *fiber.Ctx) error {
+	reqQuery := model.GetListProductRequest{}
+	err := c.QueryParser(&reqQuery)
+	exception.PanicIfNeeded(err)
+
+	res, err := ctrl.svc.GetProducts(c.UserContext(), reqQuery)
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusOK,
+		Data: res,
+	})
+}

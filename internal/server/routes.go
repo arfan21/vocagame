@@ -43,4 +43,5 @@ func (s Server) RoutesProduct(route fiber.Router, ctrl *productctrl.ControllerHT
 	v1 := route.Group("/v1")
 	productV1 := v1.Group("/products")
 	productV1.Post("", middleware.JWTAuth, ctrl.Create)
+	productV1.Get("", ctrl.GetProducts)
 }

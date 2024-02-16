@@ -22,3 +22,11 @@ type Product struct {
 func (Product) TableName() string {
 	return "products"
 }
+
+type ListProductFilter struct {
+	UserID        uuid.NullUUID `jsonL:"user_id"`
+	Name          string        `query:"name" json:"name"`
+	Page          int           `query:"page" json:"page" validate:"min=1"`
+	Limit         int           `query:"limit" json:"limit" validate:"min=1"`
+	DisableOffset bool          `json:"-"`
+}

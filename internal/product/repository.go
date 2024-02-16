@@ -13,4 +13,6 @@ type Repository interface {
 	WithTx(tx pgx.Tx) *productrepo.Repository
 
 	Create(ctx context.Context, data entity.Product) (err error)
+	GetProducts(ctx context.Context, filter entity.ListProductFilter) (result []entity.Product, err error)
+	GetTotalProduct(ctx context.Context, filter entity.ListProductFilter) (result int, err error)
 }
