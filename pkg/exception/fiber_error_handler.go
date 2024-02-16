@@ -93,11 +93,6 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		defaultRes.Message = constant.ErrUnauthorizedAccess.Error()
 	}
 
-	if errors.Is(err, constant.ErrCategoryNotFound) {
-		defaultRes.Code = fiber.StatusNotFound
-		defaultRes.Message = constant.ErrCategoryNotFound.Error()
-	}
-
 	// check decimal error decode
 	if strings.Contains(err.Error(), "error decoding string") &&
 		strings.Contains(err.Error(), "to decimal") {
@@ -114,26 +109,6 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 	if errors.Is(err, constant.ErrProductNotFound) {
 		defaultRes.Code = fiber.StatusNotFound
 		defaultRes.Message = constant.ErrProductNotFound.Error()
-	}
-
-	if errors.Is(err, constant.ErrProductAlreadyAddedToCart) {
-		defaultRes.Code = fiber.StatusConflict
-		defaultRes.Message = constant.ErrProductAlreadyAddedToCart.Error()
-	}
-
-	if errors.Is(err, constant.ErrCannotAddOwnProductToCart) {
-		defaultRes.Code = fiber.StatusConflict
-		defaultRes.Message = constant.ErrCannotAddOwnProductToCart.Error()
-	}
-
-	if errors.Is(err, constant.ErrPaymentMethodNotFound) {
-		defaultRes.Code = fiber.StatusNotFound
-		defaultRes.Message = constant.ErrPaymentMethodNotFound.Error()
-	}
-
-	if errors.Is(err, constant.ErrNoProductInCart) {
-		defaultRes.Code = fiber.StatusNotFound
-		defaultRes.Message = constant.ErrNoProductInCart.Error()
 	}
 
 	if errors.Is(err, constant.ErrProductStokNotEnough) {
@@ -154,12 +129,6 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 	if errors.Is(err, constant.ErrTransactionAlreadyPaidOrFailed) {
 		defaultRes.Code = fiber.StatusBadRequest
 		defaultRes.Message = constant.ErrTransactionAlreadyPaidOrFailed.Error()
-	}
-
-	if errors.Is(err, constant.ErrPaymentNotEqualTotalAmount) {
-		defaultRes.Code = fiber.StatusBadRequest
-		defaultRes.Message = constant.ErrPaymentNotEqualTotalAmount.Error()
-
 	}
 
 	if defaultRes.Code >= 500 {

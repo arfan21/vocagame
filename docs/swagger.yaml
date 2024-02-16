@@ -1,5 +1,24 @@
 basePath: /api
 definitions:
+  github_com_arfan21_vocagame_internal_model.ProductCreateRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: string
+      stok:
+        type: integer
+      user_id:
+        type: string
+    required:
+    - description
+    - name
+    - price
+    - stok
+    - user_id
+    type: object
   github_com_arfan21_vocagame_internal_model.UserLoginRequest:
     properties:
       email:
@@ -90,6 +109,48 @@ info:
   title: Voca Game API
   version: "1.0"
 paths:
+  /api/v1/products:
+    post:
+      consumes:
+      - application/json
+      description: Create Product
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Payload Create Product Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.ProductCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "400":
+          description: Error validation field
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                errors:
+                  items:
+                    $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.ErrValidationResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Create Product
+      tags:
+      - Product
   /api/v1/users/login:
     post:
       consumes:
