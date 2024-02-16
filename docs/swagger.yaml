@@ -1,4 +1,4 @@
-basePath: /api
+basePath: /
 definitions:
   github_com_arfan21_vocagame_internal_model.GetProductResponse:
     properties:
@@ -148,7 +148,7 @@ definitions:
         example: 1
         type: integer
     type: object
-host: localhost:8888
+host: localhost:8080
 info:
   contact:
     name: API Support
@@ -256,7 +256,40 @@ paths:
       summary: Create Product
       tags:
       - Product
-  /api/v1/products/:productid:
+  /api/v1/products/:productId:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Product
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Delete Product
+      tags:
+      - Product
     put:
       consumes:
       - application/json

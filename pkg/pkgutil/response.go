@@ -34,7 +34,7 @@ type PaginationResponse[T any] struct {
 	TotalPage int `json:"total_page" example:"1"`
 	Page      int `json:"page" example:"1"`
 	Limit     int `json:"limit" example:"10"`
-	Data      T   `json:"data,omitempty" `
+	Data      T   `json:"data" `
 }
 
 type ErrValidationResponse struct {

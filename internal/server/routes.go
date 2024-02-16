@@ -45,4 +45,5 @@ func (s Server) RoutesProduct(route fiber.Router, ctrl *productctrl.ControllerHT
 	productV1.Post("", middleware.JWTAuth, ctrl.Create)
 	productV1.Get("", ctrl.GetProducts)
 	productV1.Put("/:productId", middleware.JWTAuth, ctrl.Update)
+	productV1.Delete("/:productId", middleware.JWTAuth, ctrl.Delete)
 }

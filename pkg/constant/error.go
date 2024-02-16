@@ -19,6 +19,7 @@ var (
 	ErrTransactionAlreadyPaidOrFailed = errors.New("transaction already paid or failed")
 	ErrTxDetailInsertedNotEqual       = errors.New("transaction detail inserted not equal with transaction detail request")
 	ErrCannotUpdateNotOwner           = &ErrForbidden{Message: "cannot update product, not owner"}
+	ErrCannotDeleteNotOwner           = &ErrForbidden{Message: "cannot delete product, not owner"}
 )
 
 type ErrNotFound struct {

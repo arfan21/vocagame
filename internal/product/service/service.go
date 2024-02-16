@@ -159,3 +159,35 @@ func (s Service) Update(ctx context.Context, req model.ProductUpdateRequest) (er
 
 	return
 }
+
+func (s Service) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) (err error) {
+	// check if product exist
+	resultProduct, err := s.getProducts(ctx, entity.ListProductFilter{
+		ID:    uuid.NullUUID{UUID: id, Valid: true},
+		Limit: 1,
+		Page:  1,
+	})
+	if err != nil {
+		err = fmt.Errorf("product.service.Delete: failed to get product : %w", err)
+		return
+	}
+
+	if len(resultProduct.Data) == 0 {
+		err = constant.ErrProductNotFound
+		return
+	}
+
+	// check if user is owner of product
+	if resultProduct.Data[0].OwnerID != userID {
+		err = constant.ErrCannotDeleteNotOwner
+		return
+	}
+
+	err = s.repo.Delete(ctx, id)
+	if err != nil {
+		err = fmt.Errorf("product.service.Delete: failed to delete product : %w", err)
+		return
+	}
+
+	return
+}

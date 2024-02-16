@@ -8,6 +8,7 @@ import (
 
 	"github.com/arfan21/vocagame/internal/entity"
 	dbpostgres "github.com/arfan21/vocagame/pkg/db/postgres"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -197,6 +198,21 @@ func (r Repository) Update(ctx context.Context, data entity.Product) (err error)
 
 	if err != nil {
 		err = fmt.Errorf("product.repository.Update: failed to update product: %w", err)
+		return
+	}
+
+	return
+}
+
+func (r Repository) Delete(ctx context.Context, id uuid.UUID) (err error) {
+	query := `
+		DELETE FROM products
+		WHERE id = $1
+	`
+
+	_, err = r.db.Exec(ctx, query, id)
+	if err != nil {
+		err = fmt.Errorf("product.repository.Delete: failed to delete product: %w", err)
 		return
 	}
 

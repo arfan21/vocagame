@@ -92,7 +92,7 @@ func (ctrl ControllerHTTP) GetProducts(c *fiber.Ctx) error {
 // @Failure 400 {object} pkgutil.HTTPResponse{errors=[]pkgutil.ErrValidationResponse} "Error validation field"
 // @Failure 404 {object} pkgutil.HTTPResponse
 // @Failure 500 {object} pkgutil.HTTPResponse
-// @Router /api/v1/products/:productid [put]
+// @Router /api/v1/products/:productId [put]
 func (ctrl ControllerHTTP) Update(c *fiber.Ctx) error {
 	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
 	if !ok {
@@ -102,7 +102,7 @@ func (ctrl ControllerHTTP) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	id := c.Params("productid")
+	id := c.Params("productId")
 	if len(id) == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(pkgutil.HTTPResponse{
 			Code:    fiber.StatusBadRequest,
@@ -123,6 +123,48 @@ func (ctrl ControllerHTTP) Update(c *fiber.Ctx) error {
 	req.ID = uuidID
 
 	err = ctrl.svc.Update(c.UserContext(), req)
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusOK,
+	})
+}
+
+// @Summary Delete Product
+// @Description Delete Product
+// @Tags Product
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "With the bearer started"
+// @Param productId path string true "Product ID"
+// @Success 200 {object} pkgutil.HTTPResponse
+// @Failure 404 {object} pkgutil.HTTPResponse
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/products/:productId [delete]
+func (ctrl ControllerHTTP) Delete(c *fiber.Ctx) error {
+	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusUnauthorized,
+			Message: "invalid or expired token",
+		})
+	}
+
+	id := c.Params("productId")
+	if len(id) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusBadRequest,
+			Message: "id is required",
+		})
+	}
+
+	uuidUserID, err := uuid.Parse(claims.Subject)
+	exception.PanicIfNeeded(err)
+
+	uuidID, err := uuid.Parse(id)
+	exception.PanicIfNeeded(err)
+
+	err = ctrl.svc.Delete(c.UserContext(), uuidID, uuidUserID)
 	exception.PanicIfNeeded(err)
 
 	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
