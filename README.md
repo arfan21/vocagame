@@ -6,8 +6,8 @@
 
 ### API Specification
 
--   Swagger Docs: /docs
--   Postman Docs: [Link](#)
+-   Swagger Docs: [link](https://vocagame.fly.dev/swagger/index.html)
+-   Postman Docs: [Link](https://documenter.getpostman.com/view/10131591/2sA2r813zt)
 
 ### Prerequisites
 
