@@ -7,22 +7,31 @@ const (
 )
 
 var (
-	ErrEmailAlreadyRegistered         = errors.New("email already registered")
-	ErrEmailOrPasswordInvalid         = errors.New("email or password invalid")
-	ErrUnauthorizedAccess             = errors.New("unauthorized access")
-	ErrStringNotDecimal               = errors.New("string value is not decimal")
-	ErrInvalidUUID                    = errors.New("invalid uuid length or format")
-	ErrProductNotFound                = errors.New("product not found")
-	ErrProductStokNotEnough           = errors.New("product stok not enough")
-	ErrProductNotFoundOrStok          = errors.New("product not found or stok not enough")
-	ErrTransactionAlreadyPaid         = errors.New("transaction already paid")
-	ErrTransactionAlreadyPaidOrFailed = errors.New("transaction already paid or failed")
+	ErrEmailAlreadyRegistered         = &ErrConflict{Message: "email already registered"}
+	ErrEmailOrPasswordInvalid         = &ErrUnauthorized{Message: "email or password invalid"}
+	ErrUnauthorizedAccess             = &ErrUnauthorized{Message: "unauthorized access"}
+	ErrStringNotDecimal               = &ErrBadRequest{Message: "string not decimal"}
+	ErrInvalidUUID                    = &ErrBadRequest{Message: "invalid UUID"}
+	ErrProductNotFound                = &ErrNotFound{Message: "product not found"}
+	ErrProductStokNotEnough           = &ErrBadRequest{Message: "product stok not enough"}
+	ErrProductNotFoundOrStok          = &ErrBadRequest{Message: "product not found or stok not enough"}
+	ErrTransactionAlreadyPaid         = &ErrBadRequest{Message: "transaction already paid"}
+	ErrTransactionAlreadyPaidOrFailed = &ErrBadRequest{Message: "transaction already paid or failed"}
 	ErrTxDetailInsertedNotEqual       = errors.New("transaction detail inserted not equal with transaction detail request")
 	ErrCannotUpdateNotOwner           = &ErrForbidden{Message: "cannot update product, not owner"}
 	ErrCannotDeleteNotOwner           = &ErrForbidden{Message: "cannot delete product, not owner"}
-	ErrWalletAlreadyCreated           = errors.New("wallet already created")
+	ErrWalletAlreadyCreated           = &ErrConflict{Message: "wallet already created"}
 	ErrWalletNotFound                 = &ErrNotFound{Message: "wallet not found"}
+	ErrInsufficientBalance            = &ErrBadRequest{Message: "insufficient balance"}
 )
+
+type ErrBadRequest struct {
+	Message string
+}
+
+func (e *ErrBadRequest) Error() string {
+	return e.Message
+}
 
 type ErrNotFound struct {
 	Message string
@@ -53,5 +62,13 @@ type ErrForbidden struct {
 }
 
 func (e *ErrForbidden) Error() string {
+	return e.Message
+}
+
+type ErrConflict struct {
+	Message string
+}
+
+func (e *ErrConflict) Error() string {
 	return e.Message
 }

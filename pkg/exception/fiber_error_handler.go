@@ -42,22 +42,54 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		defaultRes.Errors = errors
 	}
 
+	var badRequestError *constant.ErrNotFound
+	if errors.As(err, &badRequestError) {
+		defaultRes.Code = fiber.StatusBadRequest
+		if badRequestError.Message != "" {
+			defaultRes.Message = badRequestError.Message
+		} else {
+			defaultRes.Message = "Bad Request"
+		}
+	}
+
 	var notFoundError *constant.ErrNotFound
 	if errors.As(err, &notFoundError) {
 		defaultRes.Code = fiber.StatusNotFound
-		defaultRes.Message = "Not Found"
+		if notFoundError.Message != "" {
+			defaultRes.Message = notFoundError.Message
+		} else {
+			defaultRes.Message = "Not Found"
+		}
 	}
 
 	var unauthorizedError *constant.ErrUnauthorized
 	if errors.As(err, &unauthorizedError) {
 		defaultRes.Code = fiber.StatusUnauthorized
-		defaultRes.Message = "Unauthorized"
+		if unauthorizedError.Message != "" {
+			defaultRes.Message = unauthorizedError.Message
+		} else {
+			defaultRes.Message = "Unauthorized"
+		}
 	}
 
 	var forbiddenError *constant.ErrForbidden
 	if errors.As(err, &forbiddenError) {
 		defaultRes.Code = fiber.StatusForbidden
-		defaultRes.Message = forbiddenError.Message
+		if forbiddenError.Message != "" {
+			defaultRes.Message = forbiddenError.Message
+		} else {
+			defaultRes.Message = "Forbidden"
+		}
+	}
+
+	var conflictError *constant.ErrConflict
+	if errors.As(err, &conflictError) {
+		defaultRes.Code = fiber.StatusConflict
+		if conflictError.Message != "" {
+			defaultRes.Message = conflictError.Message
+		} else {
+			defaultRes.Message = "Conflict"
+		}
 	}
 
 	var fiberError *fiber.Error
@@ -84,21 +116,6 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		}
 	}
 
-	if errors.Is(err, constant.ErrEmailAlreadyRegistered) {
-		defaultRes.Code = fiber.StatusConflict
-		defaultRes.Message = constant.ErrEmailAlreadyRegistered.Error()
-	}
-
-	if errors.Is(err, constant.ErrEmailOrPasswordInvalid) {
-		defaultRes.Code = fiber.StatusUnauthorized
-		defaultRes.Message = constant.ErrEmailOrPasswordInvalid.Error()
-	}
-
-	if errors.Is(err, constant.ErrUnauthorizedAccess) {
-		defaultRes.Code = fiber.StatusUnauthorized
-		defaultRes.Message = constant.ErrUnauthorizedAccess.Error()
-	}
-
 	// check decimal error decode
 	if strings.Contains(err.Error(), "error decoding string") &&
 		strings.Contains(err.Error(), "to decimal") {
@@ -110,37 +127,6 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 	if strings.Contains(strings.ToLower(err.Error()), strings.ToLower("invalid UUID")) {
 		defaultRes.Code = fiber.StatusBadRequest
 		defaultRes.Message = constant.ErrInvalidUUID.Error()
-	}
-
-	if errors.Is(err, constant.ErrProductNotFound) {
-		defaultRes.Code = fiber.StatusNotFound
-		defaultRes.Message = constant.ErrProductNotFound.Error()
-	}
-
-	if errors.Is(err, constant.ErrProductStokNotEnough) {
-		defaultRes.Code = fiber.StatusBadRequest
-		defaultRes.Message = constant.ErrProductStokNotEnough.Error()
-	}
-
-	if errors.Is(err, constant.ErrProductNotFoundOrStok) {
-		defaultRes.Code = fiber.StatusBadRequest
-		defaultRes.Message = constant.ErrProductNotFoundOrStok.Error()
-	}
-
-	if errors.Is(err, constant.ErrTransactionAlreadyPaid) {
-		defaultRes.Code = fiber.StatusBadRequest
-		defaultRes.Message = constant.ErrTransactionAlreadyPaid.Error()
-	}
-
-	if errors.Is(err, constant.ErrTransactionAlreadyPaidOrFailed) {
-		defaultRes.Code = fiber.StatusBadRequest
-		defaultRes.Message = constant.ErrTransactionAlreadyPaidOrFailed.Error()
-	}
-
-	if errors.Is(err, constant.ErrWalletAlreadyCreated) {
-		defaultRes.Code = fiber.StatusConflict
-		defaultRes.Message = constant.ErrWalletAlreadyCreated.Error()
-
 	}
 
 	if defaultRes.Code >= 500 {
