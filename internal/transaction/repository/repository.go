@@ -94,7 +94,7 @@ func (r Repository) GetHistoryWalletByUserID(ctx context.Context, userID uuid.UU
 			t.updated_at
 		FROM transactions t
 		JOIN transaction_types tt ON t.transaction_type_id = tt.id
-		WHERE t.user_id = $1 AND (tt.id = 1  OR  tt.id = 2)
+		WHERE t.user_id = $1
 	`
 
 	rows, err := r.db.Query(ctx, query, userID)
