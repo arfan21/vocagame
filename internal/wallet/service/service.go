@@ -8,6 +8,7 @@ import (
 	"github.com/arfan21/vocagame/internal/model"
 	"github.com/arfan21/vocagame/internal/wallet"
 	"github.com/arfan21/vocagame/pkg/validation"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -42,4 +43,12 @@ func (s Service) Create(ctx context.Context, req model.CreateWalletRequest) (err
 	}
 
 	return nil
+}
+
+func (s Service) GetByUserID(ctx context.Context, userID uuid.UUID, isForUpdate bool) (data entity.Wallet, err error) {
+	return s.repo.GetByUserID(ctx, userID, isForUpdate)
+}
+
+func (s Service) UpdateBalance(ctx context.Context, data entity.Wallet) (err error) {
+	return s.repo.UpdateBalance(ctx, data)
 }

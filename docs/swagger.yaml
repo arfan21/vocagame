@@ -1,5 +1,15 @@
 basePath: /
 definitions:
+  github_com_arfan21_vocagame_internal_model.CreateDepositTransactionRequest:
+    properties:
+      amount:
+        type: number
+      user_id:
+        type: string
+    required:
+    - amount
+    - user_id
+    type: object
   github_com_arfan21_vocagame_internal_model.GetProductResponse:
     properties:
       description:
@@ -335,6 +345,48 @@ paths:
       summary: Update Product
       tags:
       - Product
+  /api/v1/transactions/deposit:
+    post:
+      consumes:
+      - application/json
+      description: Create Deposit Transaction
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create Deposit Transaction
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.CreateDepositTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "400":
+          description: Error validation field
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                errors:
+                  items:
+                    $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.ErrValidationResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Create Deposit Transaction
+      tags:
+      - Transaction
   /api/v1/users/login:
     post:
       consumes:

@@ -21,6 +21,7 @@ var (
 	ErrCannotUpdateNotOwner           = &ErrForbidden{Message: "cannot update product, not owner"}
 	ErrCannotDeleteNotOwner           = &ErrForbidden{Message: "cannot delete product, not owner"}
 	ErrWalletAlreadyCreated           = errors.New("wallet already created")
+	ErrWalletNotFound                 = &ErrNotFound{Message: "wallet not found"}
 )
 
 type ErrNotFound struct {

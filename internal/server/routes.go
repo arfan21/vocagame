@@ -5,6 +5,9 @@ import (
 	productctrl "github.com/arfan21/vocagame/internal/product/controller"
 	productrepo "github.com/arfan21/vocagame/internal/product/repository"
 	productsvc "github.com/arfan21/vocagame/internal/product/service"
+	transactionctrl "github.com/arfan21/vocagame/internal/transaction/controller"
+	transactionrepo "github.com/arfan21/vocagame/internal/transaction/repository"
+	transactionsvc "github.com/arfan21/vocagame/internal/transaction/service"
 	userctrl "github.com/arfan21/vocagame/internal/user/controller"
 	userrepo "github.com/arfan21/vocagame/internal/user/repository"
 	usersvc "github.com/arfan21/vocagame/internal/user/service"
@@ -28,14 +31,18 @@ func (s *Server) Routes() {
 	productSvc := productsvc.New(productRepo)
 	productCtrl := productctrl.New(productSvc)
 
-	walletRepo := walletrepo.New(s.db)
+	walletRepo := walletrepo.New(s.db, s.db)
 	walletSvc := walletsvc.New(walletRepo)
 	walletCtrl := walletctrl.New(walletSvc)
+
+	transactionRepo := transactionrepo.New(s.db, s.db)
+	transactionSvc := transactionsvc.New(transactionRepo, walletSvc)
+	transactionCtrl := transactionctrl.New(transactionSvc)
 
 	s.RoutesCustomer(api, userCtrl)
 	s.RoutesProduct(api, productCtrl)
 	s.RoutesWallet(api, walletCtrl)
-
+	s.RoutesTransaction(api, transactionCtrl)
 }
 
 func (s Server) RoutesCustomer(route fiber.Router, ctrl *userctrl.ControllerHTTP) {
@@ -60,4 +67,10 @@ func (s Server) RoutesWallet(route fiber.Router, ctrl *walletctrl.ControllerHTTP
 	v1 := route.Group("/v1")
 	walletV1 := v1.Group("/wallets")
 	walletV1.Post("", middleware.JWTAuth, ctrl.Create)
+}
+
+func (s Server) RoutesTransaction(route fiber.Router, ctrl *transactionctrl.ControllerHTTP) {
+	v1 := route.Group("/v1")
+	transactionV1 := v1.Group("/transactions")
+	transactionV1.Post("/deposit", middleware.JWTAuth, ctrl.CreateDepositTransaction)
 }

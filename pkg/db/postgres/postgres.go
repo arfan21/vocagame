@@ -52,3 +52,8 @@ type Queryer interface {
 	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
 	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 }
+
+type Raw interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Close()
+}
