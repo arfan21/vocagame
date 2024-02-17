@@ -137,6 +137,12 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		defaultRes.Message = constant.ErrTransactionAlreadyPaidOrFailed.Error()
 	}
 
+	if errors.Is(err, constant.ErrWalletAlreadyCreated) {
+		defaultRes.Code = fiber.StatusConflict
+		defaultRes.Message = constant.ErrWalletAlreadyCreated.Error()
+
+	}
+
 	if defaultRes.Code >= 500 {
 		defaultRes.Message = http.StatusText(defaultRes.Code)
 	}

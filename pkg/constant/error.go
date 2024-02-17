@@ -20,6 +20,7 @@ var (
 	ErrTxDetailInsertedNotEqual       = errors.New("transaction detail inserted not equal with transaction detail request")
 	ErrCannotUpdateNotOwner           = &ErrForbidden{Message: "cannot update product, not owner"}
 	ErrCannotDeleteNotOwner           = &ErrForbidden{Message: "cannot delete product, not owner"}
+	ErrWalletAlreadyCreated           = errors.New("wallet already created")
 )
 
 type ErrNotFound struct {
