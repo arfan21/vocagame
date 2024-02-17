@@ -2,6 +2,7 @@ package validation
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -31,12 +33,22 @@ func Validate[T any](modelValidate T) error {
 
 	validateOnce.Do(func() {
 		validate = validator.New()
+
+		validate.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
+			if valuer, ok := field.Interface().(decimal.Decimal); ok {
+				return valuer.String()
+			}
+			return nil
+		}, decimal.Decimal{})
+		validate.RegisterValidation("dgt", decimalGtfunc)
 	})
 
 	translatorOnce.Do(func() {
 		translatorUni, _ := uni.GetTranslator("en")
 		translator = translatorUni
 		en_translations.RegisterDefaultTranslations(validate, translator)
+
+		addTranslation("dgt", "{0} must be greater than {1}")
 	})
 
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -68,4 +80,40 @@ func Validate[T any](modelValidate T) error {
 	}
 
 	return nil
+}
+
+func decimalGtfunc(fl validator.FieldLevel) bool {
+	data, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+	value, err := decimal.NewFromString(data)
+	if err != nil {
+		return false
+	}
+	baseValue, err := decimal.NewFromString(fl.Param())
+	if err != nil {
+		return false
+	}
+	fmt.Println("validation data", value.String(), baseValue.String(), data)
+	return value.GreaterThan(baseValue)
+}
+
+func addTranslation(tag string, errMessage string) {
+	registerFn := func(ut ut.Translator) error {
+		return ut.Add(tag, errMessage, false)
+	}
+
+	transFn := func(ut ut.Translator, fe validator.FieldError) string {
+		param := fe.Param()
+		tag := fe.Tag()
+
+		t, err := ut.T(tag, fe.Field(), param)
+		if err != nil {
+			return fe.(error).Error()
+		}
+		return t
+	}
+
+	_ = validate.RegisterTranslation(tag, translator, registerFn, transFn)
 }
