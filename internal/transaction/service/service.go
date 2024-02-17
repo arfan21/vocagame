@@ -170,6 +170,7 @@ func (s Service) GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID)
 		res[i].TransactionType = transaction.TransactionType.Name
 		res[i].Status = string(transaction.Status)
 		res[i].CreatedAt = transaction.CreatedAt
+		res[i].UpdatedAt = transaction.UpdatedAt
 
 		if transaction.TransactionTypeID == constant.TransactionTypeWithdrawID {
 			res[i].TotalAmount = transaction.TotalAmount.Neg()
