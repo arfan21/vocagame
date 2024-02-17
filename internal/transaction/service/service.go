@@ -10,6 +10,7 @@ import (
 	"github.com/arfan21/vocagame/internal/wallet"
 	"github.com/arfan21/vocagame/pkg/constant"
 	"github.com/arfan21/vocagame/pkg/validation"
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -21,7 +22,7 @@ func New(repo transaction.Repository, walletSvc wallet.Service) *Service {
 	return &Service{repo: repo, walletSvc: walletSvc}
 }
 
-func (s *Service) CreateDepositTransaction(ctx context.Context, req model.CreateDepositTransactionRequest) (res model.CreateTransactionResponse, err error) {
+func (s Service) CreateDepositTransaction(ctx context.Context, req model.CreateDepositTransactionRequest) (res model.CreateTransactionResponse, err error) {
 	err = validation.Validate(req)
 	if err != nil {
 		err = fmt.Errorf("transaction.service.CreateDepositTransaction: failed to validate request: %w", err)
@@ -85,7 +86,7 @@ func (s *Service) CreateDepositTransaction(ctx context.Context, req model.Create
 	return
 }
 
-func (s *Service) CreateWithdrawTransaction(ctx context.Context, req model.CreateWithdrawTransactionRequest) (res model.CreateTransactionResponse, err error) {
+func (s Service) CreateWithdrawTransaction(ctx context.Context, req model.CreateWithdrawTransactionRequest) (res model.CreateTransactionResponse, err error) {
 	err = validation.Validate(req)
 	if err != nil {
 		err = fmt.Errorf("transaction.service.CreateWithdrawTransaction: failed to validate request: %w", err)
@@ -150,6 +151,32 @@ func (s *Service) CreateWithdrawTransaction(ctx context.Context, req model.Creat
 	}
 
 	res.TransactionID = idTx.String()
+
+	return
+}
+
+func (s Service) GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID) (res []model.GetTransactionResponse, err error) {
+	transactions, err := s.repo.GetHistoryWalletByUserID(ctx, userID)
+	if err != nil {
+		err = fmt.Errorf("transaction.service.GetHistoryWalletByUserID: failed to get history wallet: %w", err)
+		return
+	}
+
+	res = make([]model.GetTransactionResponse, len(transactions))
+
+	for i, transaction := range transactions {
+		res[i].ID = transaction.ID
+		res[i].UserID = transaction.UserID
+		res[i].TransactionType = transaction.TransactionType.Name
+		res[i].Status = string(transaction.Status)
+		res[i].CreatedAt = transaction.CreatedAt
+
+		if transaction.TransactionTypeID == constant.TransactionTypeWithdrawID {
+			res[i].TotalAmount = transaction.TotalAmount.Neg()
+		} else {
+			res[i].TotalAmount = transaction.TotalAmount
+		}
+	}
 
 	return
 }

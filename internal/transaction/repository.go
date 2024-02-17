@@ -14,4 +14,5 @@ type Repository interface {
 	WithTx(tx pgx.Tx) *transactionrepo.Repository
 
 	Create(ctx context.Context, data entity.Transaction) (id uuid.UUID, err error)
+	GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID) (res []entity.Transaction, err error)
 }

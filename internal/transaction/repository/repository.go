@@ -80,3 +80,49 @@ func (r Repository) CreateDetail(ctx context.Context, data []entity.TransactionD
 
 	return
 }
+
+func (r Repository) GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID) (res []entity.Transaction, err error) {
+	query := `
+		SELECT 
+			t.id, 
+			t.user_id, 
+			t.transaction_type_id,
+			tt.name AS transaction_type_name, 
+			t.status, 
+			t.total_amount, 
+			t.created_at, 
+			t.updated_at
+		FROM transactions t
+		JOIN transaction_types tt ON t.transaction_type_id = tt.id
+		WHERE t.user_id = $1 AND (tt.id = 1  OR  tt.id = 2)
+	`
+
+	rows, err := r.db.Query(ctx, query, userID)
+	if err != nil {
+		err = fmt.Errorf("transaction.repository.GetHistoryWalletByUserID: failed to get history wallet by user id: %w", err)
+		return
+	}
+
+	for rows.Next() {
+		var data entity.Transaction
+
+		err = rows.Scan(
+			&data.ID,
+			&data.UserID,
+			&data.TransactionTypeID,
+			&data.TransactionType.Name,
+			&data.Status,
+			&data.TotalAmount,
+			&data.CreatedAt,
+			&data.UpdatedAt,
+		)
+		if err != nil {
+			err = fmt.Errorf("transaction.repository.GetHistoryWalletByUserID: failed to scan data: %w", err)
+			return
+		}
+
+		res = append(res, data)
+	}
+
+	return
+}

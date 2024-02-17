@@ -91,3 +91,33 @@ func (ctrl ControllerHTTP) CreateWithdrawTransaction(c *fiber.Ctx) error {
 		Data: id,
 	})
 }
+
+// @Summary Get Transaction By User ID
+// @Description Get Transaction By User ID
+// @Tags Transaction History
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "With the bearer started"
+// @Success 200 {object} pkgutil.HTTPResponse{data=[]model.GetTransactionResponse}
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/transactions/wallet [get]
+func (ctrl ControllerHTTP) GetHistoryWalletByUserID(c *fiber.Ctx) error {
+	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusUnauthorized,
+			Message: "invalid or expired token",
+		})
+	}
+
+	uuidUserID, err := uuid.Parse(claims.Subject)
+	exception.PanicIfNeeded(err)
+
+	res, err := ctrl.svc.GetHistoryWalletByUserID(c.UserContext(), uuidUserID)
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusOK,
+		Data: res,
+	})
+}

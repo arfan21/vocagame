@@ -364,6 +364,59 @@
                 }
             }
         },
+        "/api/v1/transactions/wallet": {
+            "get": {
+                "description": "Get Transaction By User ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction History"
+                ],
+                "summary": "Get Transaction By User ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "With the bearer started",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_arfan21_vocagame_internal_model.GetTransactionResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/transactions/withdraw": {
             "post": {
                 "description": "Create Withdraw Transaction",
@@ -888,6 +941,38 @@
                 }
             }
         },
+        "github_com_arfan21_vocagame_internal_model.GetTransactionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_arfan21_vocagame_internal_model.TransactionDetailResponse"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "number"
+                },
+                "transaction_type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_arfan21_vocagame_internal_model.ProductCreateRequest": {
             "type": "object",
             "required": [
@@ -934,6 +1019,20 @@
                     "type": "string"
                 },
                 "stok": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_arfan21_vocagame_internal_model.TransactionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "qty": {
                     "type": "integer"
                 }
             }

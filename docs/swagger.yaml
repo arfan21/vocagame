@@ -37,6 +37,27 @@ definitions:
       stok:
         type: integer
     type: object
+  github_com_arfan21_vocagame_internal_model.GetTransactionResponse:
+    properties:
+      created_at:
+        type: string
+      details:
+        items:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.TransactionDetailResponse'
+        type: array
+      id:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      transaction_type:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
   github_com_arfan21_vocagame_internal_model.ProductCreateRequest:
     properties:
       description:
@@ -71,6 +92,15 @@ definitions:
     - name
     - price
     - stok
+    type: object
+  github_com_arfan21_vocagame_internal_model.TransactionDetailResponse:
+    properties:
+      id:
+        type: string
+      product_id:
+        type: string
+      qty:
+        type: integer
     type: object
   github_com_arfan21_vocagame_internal_model.UserLoginRequest:
     properties:
@@ -397,6 +427,38 @@ paths:
       summary: Create Deposit Transaction
       tags:
       - Transaction
+  /api/v1/transactions/wallet:
+    get:
+      consumes:
+      - application/json
+      description: Get Transaction By User ID
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.GetTransactionResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Get Transaction By User ID
+      tags:
+      - Transaction History
   /api/v1/transactions/withdraw:
     post:
       consumes:

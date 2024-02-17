@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -19,8 +21,8 @@ type Transaction struct {
 	TransactionTypeID int                 `json:"transaction_type_id"`
 	Status            TransactionStatus   `json:"status"`
 	TotalAmount       decimal.Decimal     `json:"total_amount"`
-	CreatedAt         string              `json:"created_at"`
-	UpdatedAt         string              `json:"updated_at"`
+	CreatedAt         time.Time           `json:"created_at"`
+	UpdatedAt         time.Time           `json:"updated_at"`
 	User              User                `json:"user"`
 	TransactionType   TransactionType     `json:"transaction_type"`
 	TransactionDetail []TransactionDetail `json:"transaction_detail"`
