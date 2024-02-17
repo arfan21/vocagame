@@ -1,6 +1,8 @@
 ## Getting Started <a name = "getting_started"></a>
 
 ### Database Schema
+![vocagame_erd](https://github.com/arfan21/vocagame/assets/48755707/138b5a57-dfcf-47b1-8621-531cad836c0b)
+
 
 ### API Specification
 
@@ -89,7 +91,7 @@ make swag
 ```
 
 ### Run Test Locally
-
+Required Docker installed
 ```
 go test ./... -v
 ```
