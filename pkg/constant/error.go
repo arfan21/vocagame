@@ -23,6 +23,7 @@ var (
 	ErrWalletAlreadyCreated           = &ErrConflict{Message: "wallet already created"}
 	ErrWalletNotFound                 = &ErrNotFound{Message: "wallet not found"}
 	ErrInsufficientBalance            = &ErrBadRequest{Message: "insufficient balance"}
+	ErrCannotPurchaseOwnProduct       = &ErrBadRequest{Message: "cannot purchase own product"}
 )
 
 type ErrBadRequest struct {

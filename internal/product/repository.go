@@ -18,4 +18,6 @@ type Repository interface {
 	GetTotalProduct(ctx context.Context, filter entity.ListProductFilter) (result int, err error)
 	Update(ctx context.Context, data entity.Product) (err error)
 	Delete(ctx context.Context, id uuid.UUID) (err error)
+	ReduceStok(ctx context.Context, id uuid.UUID, reduceBy int) (err error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID) (result map[uuid.UUID]entity.Product, err error)
 }

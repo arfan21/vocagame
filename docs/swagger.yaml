@@ -1,5 +1,29 @@
 basePath: /
 definitions:
+  github_com_arfan21_vocagame_internal_model.CheckoutProductRequest:
+    properties:
+      product_id:
+        type: string
+      qty:
+        minimum: 1
+        type: integer
+    required:
+    - product_id
+    - qty
+    type: object
+  github_com_arfan21_vocagame_internal_model.CheckoutTransactionRequest:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.CheckoutProductRequest'
+        minItems: 1
+        type: array
+      user_id:
+        type: string
+    required:
+    - products
+    - user_id
+    type: object
   github_com_arfan21_vocagame_internal_model.CreateDepositTransactionRequest:
     properties:
       amount:
@@ -385,6 +409,48 @@ paths:
       summary: Update Product
       tags:
       - Product
+  /api/v1/transactions/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Checkout Transaction
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Checkout Transaction
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.CheckoutTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "400":
+          description: Error validation field
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                errors:
+                  items:
+                    $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.ErrValidationResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Checkout Transaction
+      tags:
+      - Transaction
   /api/v1/transactions/deposit:
     post:
       consumes:

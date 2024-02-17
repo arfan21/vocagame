@@ -191,3 +191,57 @@ func (s Service) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) (er
 
 	return
 }
+
+func (s Service) BatchReduceStok(ctx context.Context, req []model.ReduceStokRequest) (err error) {
+	tx, err := s.repo.Begin(ctx)
+	if err != nil {
+		err = fmt.Errorf("product.service.BatchUpdateStok: failed to begin transaction : %w", err)
+		return
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+			return
+		}
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			err = fmt.Errorf("product.service.BatchUpdateStok: failed to commit transaction : %w", err)
+			return
+		}
+	}()
+
+	for _, v := range req {
+		err = s.repo.ReduceStok(ctx, v.ID, v.ReduceBy)
+		if err != nil {
+			err = fmt.Errorf("product.service.BatchUpdateStok: failed to update batch stok : %w", err)
+			return err
+		}
+	}
+
+	return
+}
+
+func (s Service) GetByIDs(ctx context.Context, ids []uuid.UUID) (res map[uuid.UUID]model.GetProductResponse, err error) {
+	results, err := s.repo.GetByIDs(ctx, ids)
+	if err != nil {
+		err = fmt.Errorf("product.service.GetByIDs: failed to get products by ids : %w", err)
+		return
+	}
+
+	res = make(map[uuid.UUID]model.GetProductResponse)
+
+	for k, v := range results {
+		res[k] = model.GetProductResponse{
+			ID:          v.ID,
+			Name:        v.Name,
+			Description: v.Description,
+			Stok:        v.Stok,
+			Price:       v.Price,
+			OwnerID:     v.UserID,
+		}
+	}
+
+	return
+}

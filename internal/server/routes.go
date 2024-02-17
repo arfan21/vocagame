@@ -27,7 +27,7 @@ func (s *Server) Routes() {
 	userSvc := usersvc.New(userRepo, userRepoRedis)
 	userCtrl := userctrl.New(userSvc)
 
-	productRepo := productrepo.New(s.db)
+	productRepo := productrepo.New(s.db, s.db)
 	productSvc := productsvc.New(productRepo)
 	productCtrl := productctrl.New(productSvc)
 
@@ -36,7 +36,7 @@ func (s *Server) Routes() {
 	walletCtrl := walletctrl.New(walletSvc)
 
 	transactionRepo := transactionrepo.New(s.db, s.db)
-	transactionSvc := transactionsvc.New(transactionRepo, walletSvc)
+	transactionSvc := transactionsvc.New(transactionRepo, walletSvc, productSvc)
 	transactionCtrl := transactionctrl.New(transactionSvc)
 
 	s.RoutesCustomer(api, userCtrl)
@@ -76,4 +76,5 @@ func (s Server) RoutesTransaction(route fiber.Router, ctrl *transactionctrl.Cont
 	transactionV1.Post("/deposit", middleware.JWTAuth, ctrl.CreateDepositTransaction)
 	transactionV1.Post("/withdraw", middleware.JWTAuth, ctrl.CreateWithdrawTransaction)
 	transactionV1.Get("/wallet", middleware.JWTAuth, ctrl.GetHistoryWalletByUserID)
+	transactionV1.Post("/checkout", middleware.JWTAuth, ctrl.Checkout)
 }

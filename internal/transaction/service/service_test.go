@@ -8,6 +8,8 @@ import (
 
 	"github.com/arfan21/vocagame/internal/entity"
 	"github.com/arfan21/vocagame/internal/model"
+	productrepo "github.com/arfan21/vocagame/internal/product/repository"
+	productsvc "github.com/arfan21/vocagame/internal/product/service"
 	transactionrepo "github.com/arfan21/vocagame/internal/transaction/repository"
 	walletrepo "github.com/arfan21/vocagame/internal/wallet/repository"
 	walletsvc "github.com/arfan21/vocagame/internal/wallet/service"
@@ -96,8 +98,11 @@ func initDep(t *testing.T) (svc *Service) {
 	walletRepo := walletrepo.New(db, db)
 	walletSvc := walletsvc.New(walletRepo)
 
+	productRepo := productrepo.New(db, db)
+	productSvc := productsvc.New(productRepo)
+
 	transactionRepo := transactionrepo.New(db, db)
-	svc = New(transactionRepo, walletSvc)
+	svc = New(transactionRepo, walletSvc, productSvc)
 
 	return
 }
@@ -109,7 +114,9 @@ func initUser(t *testing.T) (id uuid.UUID) {
 		RETURNING id
 	`
 
-	err := db.QueryRow(context.Background(), query, "test", "test@email.com", "password").
+	randStr := uuid.New().String()
+
+	err := db.QueryRow(context.Background(), query, "test", randStr+"test@email.com", "password").
 		Scan(&id)
 
 	assert.NoError(t, err)
@@ -131,11 +138,26 @@ func initWallet(t *testing.T, userID uuid.UUID) {
 	assert.NoError(t, err)
 }
 
+func initProduct(t *testing.T, userID uuid.UUID) (productID uuid.UUID) {
+	query := `
+		INSERT INTO products (user_id, name, description, stok, price)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id
+	`
+
+	err := db.QueryRow(context.Background(), query, userID, "product 1", "desc", 5, decimal.NewFromInt(1000)).
+		Scan(&productID)
+
+	assert.NoError(t, err)
+
+	return
+}
+
 func truncateAllTable(t *testing.T) {
 	tables := []string{
 		"transactions",
 		"wallets",
 		"users",
+		"products",
 	}
 
 	for _, table := range tables {
@@ -165,6 +187,19 @@ func getTransactionTotalAmount(t *testing.T, id uuid.UUID) (totalAmount decimal.
 	`
 
 	err := db.QueryRow(context.Background(), query, id).Scan(&totalAmount)
+	assert.NoError(t, err)
+
+	return
+}
+
+func getProduct(t *testing.T, id uuid.UUID) (product model.GetProductResponse) {
+	query := `
+		SELECT id, name, description, stok, price
+		FROM products
+		WHERE id = $1
+	`
+
+	err := db.QueryRow(context.Background(), query, id).Scan(&product.ID, &product.Name, &product.Description, &product.Stok, &product.Price)
 	assert.NoError(t, err)
 
 	return
@@ -221,8 +256,11 @@ func initDepMock(db pgxmock.PgxPoolIface) (svc *Service) {
 	walletRepo := walletrepo.New(db, db)
 	walletSvc := walletsvc.New(walletRepo)
 
+	productRepo := productrepo.New(db, db)
+	productSvc := productsvc.New(productRepo)
+
 	transactionRepo := transactionrepo.New(db, db)
-	svc = New(transactionRepo, walletSvc)
+	svc = New(transactionRepo, walletSvc, productSvc)
 
 	return
 }
@@ -605,5 +643,308 @@ func TestCreateWithdrawTransactionFailedInsertTransaction(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, errUnexpected)
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCheckoutSuccess(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	transactionID := uuid.New()
+
+	req := model.CheckoutTransactionRequest{
+		UserID: userID,
+		Products: []model.CheckoutProductRequest{
+			{
+				ProductID: uuid.New(),
+				Qty:       2,
+			},
+		},
+	}
+
+	productIds := make([]uuid.UUID, len(req.Products))
+
+	for i, product := range req.Products {
+		productIds[i] = product.ProductID
+	}
+
+	dbMock.ExpectBegin()
+	// get product by ids
+	dbMock.ExpectQuery("SELECT (.+) FROM products (.+)").
+		WithArgs(productIds).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "name", "stok", "price", "user_id"}).
+				AddRow(req.Products[0].ProductID, "product 1", 2, decimal.NewFromInt(1000), uuid.New()),
+		)
+
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	// update balance
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Sub(decimal.NewFromInt(2000)), walletID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	// insert transaction
+	dbMock.ExpectQuery("INSERT INTO transactions (.+) VALUES (.+) RETURNING id").
+		WithArgs(userID, constant.TransactionTypePurchaseID, entity.TransactionStatusCompleted, decimal.NewFromInt(2000)).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id"}).AddRow(transactionID),
+		)
+
+	// insert transaction detail
+	dbMock.ExpectCopyFrom(pgx.Identifier{entity.TransactionDetail{}.TableName()}, []string{"transaction_id", "product_id", "qty"}).
+		WillReturnResult(1)
+
+	// update stok
+	dbMock.ExpectBegin()
+	dbMock.ExpectExec("UPDATE products SET (.+) WHERE (.+)").
+		WithArgs(req.Products[0].Qty, req.Products[0].ProductID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	dbMock.ExpectCommit()
+
+	dbMock.ExpectCommit()
+
+	id, err := svc.Checkout(context.Background(), req)
+	assert.NoError(t, err)
+	assert.Equal(t, transactionID.String(), id.TransactionID)
+}
+
+func TestCheckoutConcurrenct(t *testing.T) {
+	svc := initDep(t)
+
+	assert.NotNil(t, db)
+
+	req := model.CheckoutTransactionRequest{
+		UserID: uuid.New(),
+		Products: []model.CheckoutProductRequest{
+			{
+				ProductID: uuid.New(),
+				Qty:       3,
+			},
+		},
+	}
+	truncateAllTable(t)
+
+	initialBalance = decimal.NewFromInt(5000)
+	userID := initUser(t)
+	initWallet(t, userID)
+	userID2 := initUser(t)
+	productID := initProduct(t, userID2)
+
+	req.UserID = userID
+	req.Products[0].ProductID = productID
+
+	totalConcurrent := 10
+	arrError := make([]error, totalConcurrent)
+	arrId := make([]string, totalConcurrent)
+
+	wg := &sync.WaitGroup{}
+	// concurrent
+	for i := 0; i < totalConcurrent; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, i int) {
+			defer wg.Done()
+			id, err := svc.Checkout(context.Background(), req)
+			arrError[i] = err
+			arrId[i] = id.TransactionID
+		}(wg, i)
+	}
+
+	wg.Wait()
+	fmt.Println("all concurrent done")
+
+	for i := 0; i < totalConcurrent; i++ {
+		if arrError[i] != nil {
+			var errBadRequest *constant.ErrBadRequest
+			assert.ErrorAs(t, arrError[i], &errBadRequest)
+			fmt.Printf("concurrent %d error -> %s\n", i, errBadRequest.Error())
+		} else {
+			fmt.Printf("concurrent %d success with tx id -> %s\n", i, arrId[i])
+			assert.NotEqual(t, arrId[i], "")
+		}
+	}
+
+	product := getProduct(t, productID)
+	fmt.Println("stok ->  ", product.Stok)
+
+	assert.Equal(t, 2, product.Stok)
+
+	balance := getWalletBalance(t, userID)
+	fmt.Println("balance ->  ", balance)
+	assert.True(t, balance.Equal(initialBalance.Sub(decimal.NewFromInt(3000))))
+}
+
+func TestCheckoutFailedStokNotEnough(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	req := model.CheckoutTransactionRequest{
+		UserID: userID,
+		Products: []model.CheckoutProductRequest{
+			{
+				ProductID: uuid.New(),
+				Qty:       3,
+			},
+		},
+	}
+
+	productIds := make([]uuid.UUID, len(req.Products))
+
+	for i, product := range req.Products {
+		productIds[i] = product.ProductID
+	}
+
+	dbMock.ExpectBegin()
+	// get product by ids
+	dbMock.ExpectQuery("SELECT (.+) FROM products (.+)").
+		WithArgs(productIds).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "name", "stok", "price", "user_id"}).
+				AddRow(req.Products[0].ProductID, "product 1", 2, decimal.NewFromInt(1000), uuid.New()),
+		)
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.Checkout(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "stok not enough")
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCheckoutFailedInsufficientBalance(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	req := model.CheckoutTransactionRequest{
+		UserID: userID,
+		Products: []model.CheckoutProductRequest{
+			{
+				ProductID: uuid.New(),
+				Qty:       3,
+			},
+		},
+	}
+
+	productIds := make([]uuid.UUID, len(req.Products))
+
+	for i, product := range req.Products {
+		productIds[i] = product.ProductID
+	}
+
+	dbMock.ExpectBegin()
+	// get product by ids
+	dbMock.ExpectQuery("SELECT (.+) FROM products (.+)").
+		WithArgs(productIds).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "name", "stok", "price", "user_id"}).
+				AddRow(req.Products[0].ProductID, "product 1", 10, decimal.NewFromInt(1000), uuid.New()),
+		)
+
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(uuid.New(), userID, decimal.NewFromInt(1000), nil, nil),
+		)
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.Checkout(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, constant.ErrInsufficientBalance)
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCheckoutFailedBatchReduceStok(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	transactionID := uuid.New()
+
+	req := model.CheckoutTransactionRequest{
+		UserID: userID,
+		Products: []model.CheckoutProductRequest{
+			{
+				ProductID: uuid.New(),
+				Qty:       2,
+			},
+		},
+	}
+
+	productIds := make([]uuid.UUID, len(req.Products))
+
+	for i, product := range req.Products {
+		productIds[i] = product.ProductID
+	}
+
+	dbMock.ExpectBegin()
+	// get product by ids
+	dbMock.ExpectQuery("SELECT (.+) FROM products (.+)").
+		WithArgs(productIds).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "name", "stok", "price", "user_id"}).
+				AddRow(req.Products[0].ProductID, "product 1", 10, decimal.NewFromInt(1000), uuid.New()),
+		)
+
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	// update balance
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Sub(decimal.NewFromInt(2000)), walletID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	// insert transaction
+	dbMock.ExpectQuery("INSERT INTO transactions (.+) VALUES (.+) RETURNING id").
+		WithArgs(userID, constant.TransactionTypePurchaseID, entity.TransactionStatusCompleted, decimal.NewFromInt(2000)).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id"}).AddRow(transactionID),
+		)
+
+	// insert transaction detail
+	dbMock.ExpectCopyFrom(pgx.Identifier{entity.TransactionDetail{}.TableName()}, []string{"transaction_id", "product_id", "qty"}).
+		WillReturnResult(1)
+
+	// update stok
+	dbMock.ExpectBegin()
+	dbMock.ExpectExec("UPDATE products SET (.+) WHERE (.+)").
+		WithArgs(req.Products[0].Qty, req.Products[0].ProductID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+	dbMock.ExpectCommit()
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.Checkout(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, constant.ErrProductNotFoundOrStok)
 	assert.Equal(t, "", id.TransactionID)
 }

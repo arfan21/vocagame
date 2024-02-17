@@ -37,3 +37,13 @@ type TransactionDetailResponse struct {
 	ProductID uuid.UUID `json:"product_id"`
 	Qty       int       `json:"qty"`
 }
+
+type CheckoutTransactionRequest struct {
+	UserID   uuid.UUID                `json:"user_id" validate:"required"`
+	Products []CheckoutProductRequest `json:"products" validate:"required,min=1,dive,required"`
+}
+
+type CheckoutProductRequest struct {
+	ProductID uuid.UUID `json:"product_id" validate:"required"`
+	Qty       int       `json:"qty" validate:"required,min=1"`
+}

@@ -108,10 +108,15 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		defaultRes.Code = fiber.StatusUnprocessableEntity
 		defaultRes.Message = http.StatusText(fiber.StatusUnprocessableEntity)
 
+		defaultType := unmarshalTypeError.Type.Kind().String()
+		if defaultType == "slice" {
+			defaultType = "array"
+		}
+
 		defaultRes.Errors = []interface{}{
 			map[string]interface{}{
 				"field":   unmarshalTypeError.Field,
-				"message": fmt.Sprintf("%s harus %s", unmarshalTypeError.Field, unmarshalTypeError.Type),
+				"message": fmt.Sprintf("%s should %s", unmarshalTypeError.Field, defaultType),
 			},
 		}
 	}

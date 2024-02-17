@@ -7,21 +7,21 @@ import (
 	"strings"
 
 	"github.com/arfan21/vocagame/internal/entity"
+	"github.com/arfan21/vocagame/pkg/constant"
 	dbpostgres "github.com/arfan21/vocagame/pkg/db/postgres"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repository struct {
 	db    dbpostgres.Queryer
-	rawDb *pgxpool.Pool
+	rawDb dbpostgres.Raw
 }
 
-func New(db *pgxpool.Pool) *Repository {
+func New(raw dbpostgres.Raw, queryer dbpostgres.Queryer) *Repository {
 	return &Repository{
-		db:    db,
-		rawDb: db,
+		db:    queryer,
+		rawDb: raw,
 	}
 }
 
@@ -213,6 +213,77 @@ func (r Repository) Delete(ctx context.Context, id uuid.UUID) (err error) {
 	_, err = r.db.Exec(ctx, query, id)
 	if err != nil {
 		err = fmt.Errorf("product.repository.Delete: failed to delete product: %w", err)
+		return
+	}
+
+	return
+}
+
+func (r Repository) ReduceStok(ctx context.Context, id uuid.UUID, reduceBy int) (err error) {
+	query := `
+		UPDATE products
+		SET stok = stok - $1
+		WHERE id = $2 AND (stok - $1) >= 0
+	`
+
+	cmd, err := r.db.Exec(ctx, query, reduceBy, id)
+	if err != nil {
+		err = fmt.Errorf("product.repository.BatchUpdateStok: failed to reduce stok: %w", err)
+		return err
+	}
+
+	if cmd.RowsAffected() == 0 {
+		err = fmt.Errorf("product.repository.BatchUpdateStok: nothing updated: %w", constant.ErrProductNotFoundOrStok)
+		return err
+	}
+
+	return
+}
+
+func (r Repository) GetByIDs(ctx context.Context, ids []uuid.UUID) (result map[uuid.UUID]entity.Product, err error) {
+	query := `
+		SELECT
+			p.id,
+			p.name,
+			p.stok,
+			p.price,
+			p.user_id
+		FROM
+			products p
+		WHERE p.id = ANY($1)
+	`
+
+	rows, err := r.db.Query(ctx, query, ids)
+	if err != nil {
+		err = fmt.Errorf("product.repository.GetByIDs: failed to get products by ids: %w", err)
+		return
+	}
+
+	defer rows.Close()
+
+	result = make(map[uuid.UUID]entity.Product)
+
+	for rows.Next() {
+		var product entity.Product
+
+		err = rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Stok,
+			&product.Price,
+			&product.UserID,
+		)
+
+		if err != nil {
+			err = fmt.Errorf("product.repository.GetByIDs: failed to scan product: %w", err)
+			return
+		}
+
+		result[product.ID] = product
+	}
+
+	if rows.Err() != nil {
+		err = fmt.Errorf("product.repository.GetByIDs: failed after scan products: %w", err)
 		return
 	}
 

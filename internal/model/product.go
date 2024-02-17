@@ -39,3 +39,8 @@ type ProductUpdateRequest struct {
 	Description string          `json:"description" validate:"required"`
 	Price       decimal.Decimal `json:"price" validate:"required" swaggertype:"string"`
 }
+
+type ReduceStokRequest struct {
+	ID       uuid.UUID `json:"id"`
+	ReduceBy int       `json:"reduce_by"`
+}

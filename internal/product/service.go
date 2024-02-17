@@ -16,4 +16,6 @@ type Service interface {
 	GetProducts(ctx context.Context, req model.GetListProductRequest) (res pkgutil.PaginationResponse[[]model.GetProductResponse], err error)
 	Update(ctx context.Context, req model.ProductUpdateRequest) (err error)
 	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) (err error)
+	BatchReduceStok(ctx context.Context, req []model.ReduceStokRequest) (err error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID) (res map[uuid.UUID]model.GetProductResponse, err error)
 }
