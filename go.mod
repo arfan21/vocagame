@@ -24,6 +24,7 @@ require (
 	github.com/swaggo/swag v1.16.3
 	github.com/urfave/cli/v2 v2.27.1
 	golang.org/x/crypto v0.19.0
+	gopkg.in/guregu/null.v4 v4.0.0
 )
 
 require (

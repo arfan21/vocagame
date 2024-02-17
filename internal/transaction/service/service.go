@@ -13,6 +13,7 @@ import (
 	"github.com/arfan21/vocagame/pkg/validation"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"gopkg.in/guregu/null.v4"
 )
 
 type Service struct {
@@ -170,7 +171,7 @@ func (s Service) GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID)
 	for i, transaction := range transactions {
 		res[i].ID = transaction.ID
 		res[i].UserID = transaction.UserID
-		res[i].TransactionType = transaction.TransactionType.Name
+		res[i].TransactionType = transaction.TransactionType.Name.ValueOrZero()
 		res[i].Status = string(transaction.Status)
 		res[i].CreatedAt = transaction.CreatedAt
 		res[i].UpdatedAt = transaction.UpdatedAt
@@ -306,9 +307,9 @@ func (s Service) Checkout(ctx context.Context, req model.CheckoutTransactionRequ
 
 	for i, v := range req.Products {
 		transactionDetailData[i] = entity.TransactionDetail{
-			TransactionID: idTx,
-			ProductID:     v.ProductID,
-			Qty:           v.Qty,
+			TransactionID: uuid.NullUUID{UUID: idTx, Valid: true},
+			ProductID:     uuid.NullUUID{UUID: v.ProductID, Valid: true},
+			Qty:           null.IntFrom(int64(v.Qty)),
 		}
 	}
 
@@ -344,7 +345,7 @@ func (s Service) GetByID(ctx context.Context, req model.GetTransactionByIDReques
 
 	res.ID = transaction.ID
 	res.UserID = transaction.UserID
-	res.TransactionType = transaction.TransactionType.Name
+	res.TransactionType = transaction.TransactionType.Name.ValueOrZero()
 	res.Status = string(transaction.Status)
 	res.CreatedAt = transaction.CreatedAt
 	res.UpdatedAt = transaction.UpdatedAt
@@ -354,11 +355,11 @@ func (s Service) GetByID(ctx context.Context, req model.GetTransactionByIDReques
 
 	for i, v := range transaction.TransactionDetail {
 		res.Details[i] = model.TransactionDetailResponse{
-			ID:           v.ID,
-			ProductID:    v.ProductID,
-			Qty:          v.Qty,
-			ProductName:  v.Product.Name,
-			ProductPrice: v.Product.Price,
+			ID:           v.ID.UUID,
+			ProductID:    v.ProductID.UUID,
+			Qty:          int(v.Qty.ValueOrZero()),
+			ProductName:  v.Product.Name.ValueOrZero(),
+			ProductPrice: v.Product.Price.Decimal,
 		}
 	}
 

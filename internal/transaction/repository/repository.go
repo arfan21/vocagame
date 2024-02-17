@@ -144,9 +144,9 @@ func (r Repository) GetByID(ctx context.Context, id, userID uuid.UUID) (res enti
 			p.name AS product_name,
 			p.price AS product_price
 		FROM transactions t
-		JOIN transaction_types tt ON t.transaction_type_id = tt.id
-		JOIN transaction_details td ON t.id = td.transaction_id
-		JOIN products p ON td.product_id = p.id
+		LEFT JOIN transaction_types tt ON t.transaction_type_id = tt.id
+		LEFT JOIN transaction_details td ON t.id = td.transaction_id
+		LEFT JOIN products p ON td.product_id = p.id
 		WHERE t.id = $1 AND t.user_id = $2
 	`
 
@@ -183,11 +183,19 @@ func (r Repository) GetByID(ctx context.Context, id, userID uuid.UUID) (res enti
 			return
 		}
 
-		res.TransactionDetail = append(res.TransactionDetail, detail)
+		if detail.ID.Valid {
+			res.TransactionDetail = append(res.TransactionDetail, detail)
+		}
+
 	}
 
 	if rows.Err() != nil {
 		err = fmt.Errorf("transaction.repository.GetByID: failed after scan data: %w", err)
+		return
+	}
+
+	if rows.CommandTag().RowsAffected() == 0 {
+		err = constant.ErrTransactionNotFound
 		return
 	}
 

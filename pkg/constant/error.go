@@ -24,6 +24,7 @@ var (
 	ErrWalletNotFound                 = &ErrNotFound{Message: "wallet not found"}
 	ErrInsufficientBalance            = &ErrBadRequest{Message: "insufficient balance"}
 	ErrCannotPurchaseOwnProduct       = &ErrBadRequest{Message: "cannot purchase own product"}
+	ErrTransactionNotFound            = &ErrNotFound{Message: "transaction not found"}
 )
 
 type ErrBadRequest struct {

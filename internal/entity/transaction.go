@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"gopkg.in/guregu/null.v4"
 )
 
 type TransactionStatus string
@@ -33,8 +34,8 @@ func (Transaction) TableName() string {
 }
 
 type TransactionType struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   null.Int    `json:"id"`
+	Name null.String `json:"name"`
 }
 
 func (TransactionType) TableName() string {
@@ -42,15 +43,20 @@ func (TransactionType) TableName() string {
 }
 
 type TransactionDetail struct {
-	ID            uuid.UUID `json:"id"`
-	TransactionID uuid.UUID `json:"transaction_id"`
-	ProductID     uuid.UUID `json:"product_id"`
-	Qty           int       `json:"qty"`
-	CreatedAt     string    `json:"created_at"`
-	UpdatedAt     string    `json:"updated_at"`
-	Product       Product   `json:"product"`
+	ID            uuid.NullUUID      `json:"id"`
+	TransactionID uuid.NullUUID      `json:"transaction_id"`
+	ProductID     uuid.NullUUID      `json:"product_id"`
+	Qty           null.Int           `json:"qty"`
+	CreatedAt     null.Time          `json:"created_at"`
+	UpdatedAt     null.Time          `json:"updated_at"`
+	Product       TransactionProduct `json:"product"`
 }
 
 func (TransactionDetail) TableName() string {
 	return "transaction_details"
+}
+
+type TransactionProduct struct {
+	Name  null.String         `json:"name"`
+	Price decimal.NullDecimal `json:"price"`
 }
