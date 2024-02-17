@@ -15,4 +15,5 @@ type Repository interface {
 
 	Create(ctx context.Context, data entity.Transaction) (id uuid.UUID, err error)
 	GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID) (res []entity.Transaction, err error)
+	GetByID(ctx context.Context, id, userID uuid.UUID) (res entity.Transaction, err error)
 }

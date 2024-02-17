@@ -126,3 +126,70 @@ func (r Repository) GetHistoryWalletByUserID(ctx context.Context, userID uuid.UU
 
 	return
 }
+
+func (r Repository) GetByID(ctx context.Context, id, userID uuid.UUID) (res entity.Transaction, err error) {
+	query := `
+		SELECT 
+			t.id, 
+			t.user_id, 
+			t.transaction_type_id,
+			tt.name AS transaction_type_name, 
+			t.status, 
+			t.total_amount, 
+			t.created_at, 
+			t.updated_at,
+			td.id AS transaction_detail_id,
+			td.product_id,
+			td.qty,
+			p.name AS product_name,
+			p.price AS product_price
+		FROM transactions t
+		JOIN transaction_types tt ON t.transaction_type_id = tt.id
+		JOIN transaction_details td ON t.id = td.transaction_id
+		JOIN products p ON td.product_id = p.id
+		WHERE t.id = $1 AND t.user_id = $2
+	`
+
+	rows, err := r.db.Query(ctx, query, id, userID)
+	if err != nil {
+		err = fmt.Errorf("transaction.repository.GetByID: failed to get transaction by id: %w", err)
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var detail entity.TransactionDetail
+
+		err = rows.Scan(
+			&res.ID,
+			&res.UserID,
+			&res.TransactionTypeID,
+			&res.TransactionType.Name,
+			&res.Status,
+			&res.TotalAmount,
+			&res.CreatedAt,
+			&res.UpdatedAt,
+			&detail.ID,
+			&detail.ProductID,
+			&detail.Qty,
+			&detail.Product.Name,
+			&detail.Product.Price,
+		)
+
+		if err != nil {
+			err = fmt.Errorf("transaction.repository.GetByID: failed to scan data: %w", err)
+			return
+		}
+
+		res.TransactionDetail = append(res.TransactionDetail, detail)
+	}
+
+	if rows.Err() != nil {
+		err = fmt.Errorf("transaction.repository.GetByID: failed after scan data: %w", err)
+		return
+	}
+
+	return
+}

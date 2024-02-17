@@ -328,3 +328,39 @@ func (s Service) Checkout(ctx context.Context, req model.CheckoutTransactionRequ
 
 	return
 }
+
+func (s Service) GetByID(ctx context.Context, req model.GetTransactionByIDRequest) (res model.GetTransactionResponse, err error) {
+	err = validation.Validate(req)
+	if err != nil {
+		err = fmt.Errorf("transaction.service.GetByID: failed to validate request: %w", err)
+		return
+	}
+
+	transaction, err := s.repo.GetByID(ctx, req.ID, req.UserID)
+	if err != nil {
+		err = fmt.Errorf("transaction.service.GetByID: failed to get transaction: %w", err)
+		return
+	}
+
+	res.ID = transaction.ID
+	res.UserID = transaction.UserID
+	res.TransactionType = transaction.TransactionType.Name
+	res.Status = string(transaction.Status)
+	res.CreatedAt = transaction.CreatedAt
+	res.UpdatedAt = transaction.UpdatedAt
+	res.TotalAmount = transaction.TotalAmount
+
+	res.Details = make([]model.TransactionDetailResponse, len(transaction.TransactionDetail))
+
+	for i, v := range transaction.TransactionDetail {
+		res.Details[i] = model.TransactionDetailResponse{
+			ID:           v.ID,
+			ProductID:    v.ProductID,
+			Qty:          v.Qty,
+			ProductName:  v.Product.Name,
+			ProductPrice: v.Product.Price,
+		}
+	}
+
+	return
+}

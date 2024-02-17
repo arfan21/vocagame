@@ -12,4 +12,5 @@ type Service interface {
 	CreateWithdrawTransaction(ctx context.Context, req model.CreateWithdrawTransactionRequest) (res model.CreateTransactionResponse, err error)
 	GetHistoryWalletByUserID(ctx context.Context, userID uuid.UUID) (res []model.GetTransactionResponse, err error)
 	Checkout(ctx context.Context, req model.CheckoutTransactionRequest) (res model.CreateTransactionResponse, err error)
+	GetByID(ctx context.Context, req model.GetTransactionByIDRequest) (res model.GetTransactionResponse, err error)
 }

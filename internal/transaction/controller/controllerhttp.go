@@ -158,3 +158,41 @@ func (ctrl ControllerHTTP) Checkout(c *fiber.Ctx) error {
 		Data: id,
 	})
 }
+
+// @Summary Get Transaction By ID
+// @Description Get Transaction By ID
+// @Tags Transaction
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "With the bearer started"
+// @Param transactionId path string true "Transaction ID"
+// @Success 200 {object} pkgutil.HTTPResponse{data=model.GetTransactionResponse}
+// @Failure 404 {object} pkgutil.HTTPResponse
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/transactions/:transactionId [get]
+func (ctrl ControllerHTTP) GetByID(c *fiber.Ctx) error {
+	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusUnauthorized,
+			Message: "invalid or expired token",
+		})
+	}
+
+	transactionID, err := uuid.Parse(c.Params("transactionId"))
+	exception.PanicIfNeeded(err)
+
+	userID, err := uuid.Parse(claims.Subject)
+	exception.PanicIfNeeded(err)
+
+	res, err := ctrl.svc.GetByID(c.UserContext(), model.GetTransactionByIDRequest{
+		ID:     transactionID,
+		UserID: userID,
+	})
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusOK,
+		Data: res,
+	})
+}

@@ -123,6 +123,10 @@ definitions:
         type: string
       product_id:
         type: string
+      product_name:
+        type: string
+      product_price:
+        type: number
       qty:
         type: integer
     type: object
@@ -409,6 +413,45 @@ paths:
       summary: Update Product
       tags:
       - Product
+  /api/v1/transactions/:transactionId:
+    get:
+      consumes:
+      - application/json
+      description: Get Transaction By ID
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Transaction ID
+        in: path
+        name: transactionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_arfan21_vocagame_internal_model.GetTransactionResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Get Transaction By ID
+      tags:
+      - Transaction
   /api/v1/transactions/checkout:
     post:
       consumes:

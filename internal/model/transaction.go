@@ -21,6 +21,11 @@ type CreateTransactionResponse struct {
 	TransactionID string `json:"transaction_id"`
 }
 
+type GetTransactionByIDRequest struct {
+	ID     uuid.UUID `json:"id" validate:"required"`
+	UserID uuid.UUID `json:"user_id" validate:"required"`
+}
+
 type GetTransactionResponse struct {
 	ID              uuid.UUID                   `json:"id"`
 	UserID          uuid.UUID                   `json:"user_id"`
@@ -33,9 +38,11 @@ type GetTransactionResponse struct {
 }
 
 type TransactionDetailResponse struct {
-	ID        uuid.UUID `json:"id"`
-	ProductID uuid.UUID `json:"product_id"`
-	Qty       int       `json:"qty"`
+	ID           uuid.UUID       `json:"id"`
+	ProductID    uuid.UUID       `json:"product_id"`
+	Qty          int             `json:"qty"`
+	ProductName  string          `json:"product_name"`
+	ProductPrice decimal.Decimal `json:"product_price"`
 }
 
 type CheckoutTransactionRequest struct {

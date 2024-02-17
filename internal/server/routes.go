@@ -77,4 +77,5 @@ func (s Server) RoutesTransaction(route fiber.Router, ctrl *transactionctrl.Cont
 	transactionV1.Post("/withdraw", middleware.JWTAuth, ctrl.CreateWithdrawTransaction)
 	transactionV1.Get("/wallet", middleware.JWTAuth, ctrl.GetHistoryWalletByUserID)
 	transactionV1.Post("/checkout", middleware.JWTAuth, ctrl.Checkout)
+	transactionV1.Get("/:transactionId", middleware.JWTAuth, ctrl.GetByID)
 }

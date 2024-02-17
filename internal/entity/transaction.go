@@ -48,6 +48,7 @@ type TransactionDetail struct {
 	Qty           int       `json:"qty"`
 	CreatedAt     string    `json:"created_at"`
 	UpdatedAt     string    `json:"updated_at"`
+	Product       Product   `json:"product"`
 }
 
 func (TransactionDetail) TableName() string {
