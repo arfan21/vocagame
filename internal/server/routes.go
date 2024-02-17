@@ -67,6 +67,7 @@ func (s Server) RoutesWallet(route fiber.Router, ctrl *walletctrl.ControllerHTTP
 	v1 := route.Group("/v1")
 	walletV1 := v1.Group("/wallets")
 	walletV1.Post("", middleware.JWTAuth, ctrl.Create)
+	walletV1.Get("", middleware.JWTAuth, ctrl.GetByUserID)
 }
 
 func (s Server) RoutesTransaction(route fiber.Router, ctrl *transactionctrl.ControllerHTTP) {

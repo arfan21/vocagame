@@ -36,12 +36,11 @@ func (r Repository) WithTx(tx pgx.Tx) *Repository {
 
 func (r Repository) Create(ctx context.Context, data entity.Wallet) (err error) {
 	query := `
-		INSERT INTO wallets (id, balance, user_id)
-		VALUES ($1, $2, $3)
+		INSERT INTO wallets (balance, user_id)
+		VALUES ($1, $2)
 	`
 
 	_, err = r.db.Exec(ctx, query,
-		data.ID,
 		data.Balance,
 		data.UserID,
 	)
@@ -63,7 +62,7 @@ func (r Repository) Create(ctx context.Context, data entity.Wallet) (err error) 
 
 func (r Repository) GetByUserID(ctx context.Context, userID uuid.UUID, isForUpdate bool) (data entity.Wallet, err error) {
 	query := `
-		SELECT id, balance, user_id
+		SELECT id, user_id, balance, created_at, updated_at
 		FROM wallets
 		WHERE user_id = $1
 	`
@@ -74,8 +73,10 @@ func (r Repository) GetByUserID(ctx context.Context, userID uuid.UUID, isForUpda
 
 	err = r.db.QueryRow(ctx, query, userID).Scan(
 		&data.ID,
-		&data.Balance,
 		&data.UserID,
+		&data.Balance,
+		&data.CreatedAt,
+		&data.UpdatedAt,
 	)
 
 	if err != nil {

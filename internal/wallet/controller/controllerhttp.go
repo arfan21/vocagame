@@ -52,3 +52,35 @@ func (ctrl ControllerHTTP) Create(c *fiber.Ctx) error {
 		Code: fiber.StatusCreated,
 	})
 }
+
+// @Summary Get wallet by user id
+// @Description Get wallet by user id
+// @Tags Wallet
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "With the bearer started"
+// @Param user_id path string true "User ID"
+// @Success 200 {object} pkgutil.HTTPResponse
+// @Failure 400 {object} pkgutil.HTTPResponse{errors=[]pkgutil.ErrValidationResponse} "Error validation field"
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/wallets [get]
+func (ctrl ControllerHTTP) GetByUserID(c *fiber.Ctx) error {
+	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusUnauthorized,
+			Message: "invalid or expired token",
+		})
+	}
+
+	uuidUserID, err := uuid.Parse(claims.Subject)
+	exception.PanicIfNeeded(err)
+
+	data, err := ctrl.svc.GetByUserID(c.UserContext(), uuidUserID, false)
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusOK).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusOK,
+		Data: data,
+	})
+}

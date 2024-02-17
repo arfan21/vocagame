@@ -55,7 +55,13 @@ func (s *Service) CreateDepositTransaction(ctx context.Context, req model.Create
 
 	walletData.Balance = walletData.Balance.Add(req.Amount)
 
-	err = s.walletSvc.WithTx(tx).UpdateBalance(ctx, walletData)
+	walletDataReq := model.UpdateBalanceRequest{
+		ID:      walletData.ID,
+		Balance: walletData.Balance,
+		UserID:  walletData.UserID,
+	}
+
+	err = s.walletSvc.WithTx(tx).UpdateBalance(ctx, walletDataReq)
 	if err != nil {
 		err = fmt.Errorf("transaction.service.CreateDepositTransaction: failed to update wallet balance: %w", err)
 		return

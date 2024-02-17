@@ -551,6 +551,46 @@ paths:
       tags:
       - user
   /api/v1/wallets:
+    get:
+      consumes:
+      - application/json
+      description: Get wallet by user id
+      parameters:
+      - description: With the bearer started
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+        "400":
+          description: Error validation field
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+            - properties:
+                errors:
+                  items:
+                    $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.ErrValidationResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_arfan21_vocagame_pkg_pkgutil.HTTPResponse'
+      summary: Get wallet by user id
+      tags:
+      - Wallet
     post:
       consumes:
       - application/json

@@ -45,10 +45,29 @@ func (s Service) Create(ctx context.Context, req model.CreateWalletRequest) (err
 	return nil
 }
 
-func (s Service) GetByUserID(ctx context.Context, userID uuid.UUID, isForUpdate bool) (data entity.Wallet, err error) {
-	return s.repo.GetByUserID(ctx, userID, isForUpdate)
+func (s Service) GetByUserID(ctx context.Context, userID uuid.UUID, isForUpdate bool) (res model.WalletResponse, err error) {
+	result, err := s.repo.GetByUserID(ctx, userID, isForUpdate)
+	if err != nil {
+		err = fmt.Errorf("wallet.service.GetByUserID: failed to get wallet data : %w", err)
+		return
+	}
+
+	res = model.WalletResponse{
+		ID:        result.ID,
+		Balance:   result.Balance,
+		UserID:    result.UserID,
+		CreatedAt: result.CreatedAt,
+		UpdatedAt: result.UpdatedAt,
+	}
+
+	return
 }
 
-func (s Service) UpdateBalance(ctx context.Context, data entity.Wallet) (err error) {
+func (s Service) UpdateBalance(ctx context.Context, req model.UpdateBalanceRequest) (err error) {
+	data := entity.Wallet{
+		ID:      req.ID,
+		Balance: req.Balance,
+		UserID:  req.UserID,
+	}
 	return s.repo.UpdateBalance(ctx, data)
 }
