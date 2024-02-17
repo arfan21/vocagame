@@ -42,7 +42,7 @@ func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
 		defaultRes.Errors = errors
 	}
 
-	var badRequestError *constant.ErrNotFound
+	var badRequestError *constant.ErrBadRequest
 	if errors.As(err, &badRequestError) {
 		defaultRes.Code = fiber.StatusBadRequest
 		if badRequestError.Message != "" {

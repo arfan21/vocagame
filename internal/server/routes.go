@@ -74,4 +74,5 @@ func (s Server) RoutesTransaction(route fiber.Router, ctrl *transactionctrl.Cont
 	v1 := route.Group("/v1")
 	transactionV1 := v1.Group("/transactions")
 	transactionV1.Post("/deposit", middleware.JWTAuth, ctrl.CreateDepositTransaction)
+	transactionV1.Post("/withdraw", middleware.JWTAuth, ctrl.CreateWithdrawTransaction)
 }

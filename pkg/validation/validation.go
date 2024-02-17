@@ -2,7 +2,6 @@ package validation
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -95,7 +94,6 @@ func decimalGtfunc(fl validator.FieldLevel) bool {
 	if err != nil {
 		return false
 	}
-	fmt.Println("validation data", value.String(), baseValue.String(), data)
 	return value.GreaterThan(baseValue)
 }
 

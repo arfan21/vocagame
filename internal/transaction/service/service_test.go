@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/arfan21/vocagame/internal/entity"
 	"github.com/arfan21/vocagame/internal/model"
 	transactionrepo "github.com/arfan21/vocagame/internal/transaction/repository"
 	walletrepo "github.com/arfan21/vocagame/internal/wallet/repository"
@@ -226,6 +227,50 @@ func initDepMock(db pgxmock.PgxPoolIface) (svc *Service) {
 	return
 }
 
+func TestCreateDepositTransactionSuccess(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	transactionID := uuid.New()
+
+	req := model.CreateDepositTransactionRequest{
+		Amount: decimal.NewFromInt(50000),
+		UserID: userID,
+	}
+
+	dbMock.ExpectBegin()
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	// update balance
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Add(req.Amount), walletID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	// insert transaction
+	dbMock.ExpectQuery("INSERT INTO transactions (.+) VALUES (.+) RETURNING id").
+		WithArgs(userID, constant.TransactionTypeDepositID, entity.TransactionStatusCompleted, req.Amount).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id"}).AddRow(transactionID),
+		)
+
+	dbMock.ExpectCommit()
+
+	id, err := svc.CreateDepositTransaction(context.Background(), req)
+	assert.NoError(t, err)
+	assert.NotEqual(t, id.TransactionID, transactionID)
+
+}
+
 func TestCreateDepositTransactionFailedWalletNotFound(t *testing.T) {
 	dbMock := initPgMock(t)
 	svc := initDepMock(dbMock)
@@ -260,26 +305,34 @@ func TestCreateDepositTransactionFailedUpdateBalance(t *testing.T) {
 	assert.NotNil(t, dbMock)
 
 	userID := uuid.New()
+	walletID := uuid.New()
 	req := model.CreateDepositTransactionRequest{
 		Amount: decimal.NewFromInt(50000),
 		UserID: userID,
 	}
 
+	errUnexpected := fmt.Errorf("unexpected error")
+
 	dbMock.ExpectBegin()
 	// get wallet
 	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
 		WithArgs(userID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "balance", "user_id"}).AddRow(uuid.New(), initialBalance, userID))
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
 
 	// update balance
-	dbMock.ExpectExec("UPDATE wallets").
-		WillReturnError(fmt.Errorf("unexpected error"))
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Add(req.Amount), walletID).
+		WillReturnError(errUnexpected)
 
 	dbMock.ExpectRollback()
 
 	id, err := svc.CreateDepositTransaction(context.Background(), req)
 
 	assert.Error(t, err)
+	assert.ErrorIs(t, err, errUnexpected)
 	assert.Equal(t, "", id.TransactionID)
 }
 
@@ -290,8 +343,101 @@ func TestCreateDepositTransactionFailedInsertTransaction(t *testing.T) {
 	assert.NotNil(t, dbMock)
 
 	userID := uuid.New()
+	walletID := uuid.New()
 	req := model.CreateDepositTransactionRequest{
 		Amount: decimal.NewFromInt(50000),
+		UserID: userID,
+	}
+
+	errUnexpected := fmt.Errorf("unexpected error")
+
+	dbMock.ExpectBegin()
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	// update balance
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Add(req.Amount), walletID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	// insert transaction
+	dbMock.ExpectQuery("INSERT INTO transactions (.+) VALUES (.+) RETURNING id").
+		WithArgs(userID, constant.TransactionTypeDepositID, entity.TransactionStatusCompleted, req.Amount).
+		WillReturnError(errUnexpected)
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.CreateDepositTransaction(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, errUnexpected)
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCreateWithdrawTransactionConcurrent(t *testing.T) {
+	svc := initDep(t)
+
+	assert.NotNil(t, db)
+
+	req := model.CreateWithdrawTransactionRequest{
+		Amount: decimal.NewFromInt(5000),
+	}
+	truncateAllTable(t)
+	userID := initUser(t)
+	initWallet(t, userID)
+
+	req.UserID = userID
+
+	totalConcurrent := 10
+	arrError := make([]error, totalConcurrent)
+	arrId := make([]string, totalConcurrent)
+
+	wg := &sync.WaitGroup{}
+	// concurrent
+	for i := 0; i < totalConcurrent; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, i int) {
+			defer wg.Done()
+
+			id, err := svc.CreateWithdrawTransaction(context.Background(), req)
+			arrError[i] = err
+			arrId[i] = id.TransactionID
+		}(wg, i)
+	}
+
+	wg.Wait()
+	fmt.Println("all concurrent done")
+
+	for i := 0; i < totalConcurrent; i++ {
+		if arrError[i] != nil {
+			assert.ErrorIs(t, arrError[i], constant.ErrInsufficientBalance)
+		} else {
+			assert.NotEqual(t, arrId[i], "")
+		}
+	}
+
+	balance := getWalletBalance(t, userID)
+	fmt.Println("balance ->  ", balance)
+	assert.True(t, balance.Equal(initialBalance.Sub(req.Amount)))
+}
+
+func TestCreateWithdrawTransactionSuccess(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	transactionID := uuid.New()
+
+	req := model.CreateWithdrawTransactionRequest{
+		Amount: decimal.NewFromInt(3000),
 		UserID: userID,
 	}
 
@@ -299,20 +445,165 @@ func TestCreateDepositTransactionFailedInsertTransaction(t *testing.T) {
 	// get wallet
 	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
 		WithArgs(userID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "balance", "user_id"}).AddRow(uuid.New(), initialBalance, userID))
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
 
 	// update balance
-	dbMock.ExpectExec("UPDATE wallets").
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Sub(req.Amount), walletID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	// insert transaction
-	dbMock.ExpectExec("INSERT INTO transactions").
-		WillReturnError(fmt.Errorf("unexpected error"))
+	dbMock.ExpectQuery("INSERT INTO transactions (.+) VALUES (.+) RETURNING id").
+		WithArgs(userID, constant.TransactionTypeWithdrawID, entity.TransactionStatusCompleted, req.Amount).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id"}).AddRow(transactionID),
+		)
+
+	dbMock.ExpectCommit()
+
+	id, err := svc.CreateWithdrawTransaction(context.Background(), req)
+	assert.NoError(t, err)
+	assert.NotEqual(t, id.TransactionID, transactionID)
+}
+
+func TestCreateWithdrawTransactionFailedWalletNotFound(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	req := model.CreateWithdrawTransactionRequest{
+		Amount: decimal.NewFromInt(3000),
+		UserID: userID,
+	}
+
+	dbMock.ExpectBegin()
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnError(pgx.ErrNoRows)
 
 	dbMock.ExpectRollback()
 
-	id, err := svc.CreateDepositTransaction(context.Background(), req)
+	id, err := svc.CreateWithdrawTransaction(context.Background(), req)
 
 	assert.Error(t, err)
+	assert.ErrorIs(t, err, constant.ErrWalletNotFound)
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCreateWithdrawTransactionFailedInsufficienBalance(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	req := model.CreateWithdrawTransactionRequest{
+		Amount: decimal.NewFromInt(6000),
+		UserID: userID,
+	}
+
+	dbMock.ExpectBegin()
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.CreateWithdrawTransaction(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, constant.ErrInsufficientBalance)
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCreateWithdrawTransactionFailedUpdateBalance(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	req := model.CreateWithdrawTransactionRequest{
+		Amount: decimal.NewFromInt(3000),
+		UserID: userID,
+	}
+
+	errUnexpected := fmt.Errorf("unexpected error")
+
+	dbMock.ExpectBegin()
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	// update balance
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Sub(req.Amount), walletID).
+		WillReturnError(errUnexpected)
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.CreateWithdrawTransaction(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, errUnexpected)
+	assert.Equal(t, "", id.TransactionID)
+}
+
+func TestCreateWithdrawTransactionFailedInsertTransaction(t *testing.T) {
+	dbMock := initPgMock(t)
+	svc := initDepMock(dbMock)
+
+	assert.NotNil(t, dbMock)
+
+	userID := uuid.New()
+	walletID := uuid.New()
+	req := model.CreateWithdrawTransactionRequest{
+		Amount: decimal.NewFromInt(3000),
+		UserID: userID,
+	}
+
+	errUnexpected := fmt.Errorf("unexpected error")
+
+	dbMock.ExpectBegin()
+	// get wallet
+	dbMock.ExpectQuery("SELECT (.+) FROM wallets (.+) FOR UPDATE").
+		WithArgs(userID).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "balance", "created_at", "updated_at"}).
+				AddRow(walletID, userID, initialBalance, nil, nil),
+		)
+
+	// update balance
+	dbMock.ExpectExec("UPDATE wallets SET balance = (.+) WHERE id (.+)  ").
+		WithArgs(initialBalance.Sub(req.Amount), walletID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	// insert transaction
+	dbMock.ExpectQuery("INSERT INTO transactions (.+) VALUES (.+) RETURNING id").
+		WithArgs(userID, constant.TransactionTypeWithdrawID, entity.TransactionStatusCompleted, req.Amount).
+		WillReturnError(errUnexpected)
+
+	dbMock.ExpectRollback()
+
+	id, err := svc.CreateWithdrawTransaction(context.Background(), req)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, errUnexpected)
 	assert.Equal(t, "", id.TransactionID)
 }

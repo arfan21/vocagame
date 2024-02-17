@@ -54,3 +54,40 @@ func (ctrl ControllerHTTP) CreateDepositTransaction(c *fiber.Ctx) error {
 		Data: id,
 	})
 }
+
+// @Summary Create Withdraw Transaction
+// @Description Create Withdraw Transaction
+// @Tags Transaction
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "With the bearer started"
+// @Param body body model.CreateWithdrawTransactionRequest true "Create Withdraw Transaction"
+// @Success 201 {object} pkgutil.HTTPResponse
+// @Failure 400 {object} pkgutil.HTTPResponse{errors=[]pkgutil.ErrValidationResponse} "Error validation field"
+// @Failure 500 {object} pkgutil.HTTPResponse
+// @Router /api/v1/transactions/withdraw [post]
+func (ctrl ControllerHTTP) CreateWithdrawTransaction(c *fiber.Ctx) error {
+	claims, ok := c.Locals(constant.JWTClaimsContextKey).(model.JWTClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(pkgutil.HTTPResponse{
+			Code:    fiber.StatusUnauthorized,
+			Message: "invalid or expired token",
+		})
+	}
+
+	var req model.CreateWithdrawTransactionRequest
+	err := c.BodyParser(&req)
+	exception.PanicIfNeeded(err)
+
+	uuidUserID, err := uuid.Parse(claims.Subject)
+	exception.PanicIfNeeded(err)
+	req.UserID = uuidUserID
+
+	id, err := ctrl.svc.CreateWithdrawTransaction(c.UserContext(), req)
+	exception.PanicIfNeeded(err)
+
+	return c.Status(fiber.StatusCreated).JSON(pkgutil.HTTPResponse{
+		Code: fiber.StatusCreated,
+		Data: id,
+	})
+}
