@@ -5,6 +5,7 @@ import (
 
 	"github.com/arfan21/vocagame/cmd/api"
 	migration "github.com/arfan21/vocagame/cmd/migrate"
+	"github.com/arfan21/vocagame/cmd/tool"
 	"github.com/urfave/cli/v2"
 )
 
@@ -26,6 +27,7 @@ func main() {
 	appCli.Commands = []*cli.Command{
 		migration.Root(),
 		api.Serve(),
+		tool.TestRedis(),
 	}
 
 	if err := appCli.Run(os.Args); err != nil {

@@ -2,7 +2,9 @@ package dbredis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/arfan21/vocagame/config"
 	"github.com/arfan21/vocagame/pkg/logger"
@@ -25,4 +27,26 @@ func New() (*redis.Client, error) {
 	logger.Log(context.Background()).Info().Msg("dbredis: connection established")
 
 	return client, nil
+}
+
+func Set(ctx context.Context, client *redis.Client, key string, value any, expiration time.Duration) error {
+	valueByte, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return client.Set(ctx, key, string(valueByte), expiration).Err()
+}
+
+func Get[T any](ctx context.Context, client *redis.Client, key string) (res T, err error) {
+	val, err := client.Get(ctx, key).Result()
+	if err != nil {
+		return res, err
+	}
+
+	err = json.Unmarshal([]byte(val), &res)
+	if err != nil {
+		return res, err
+	}
+
+	return res, nil
 }
